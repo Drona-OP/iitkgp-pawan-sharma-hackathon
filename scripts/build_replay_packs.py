@@ -232,7 +232,8 @@ TARIFF = [
 # manipulation and accounting fraud, with short positions held through US-traded bonds and
 # non-Indian-traded derivatives; Adani Enterprises' Rs 20,000 crore follow-on offer (FPO); the
 # group called the report baseless; on 25 January Adani Ports fell 6.3% and Adani Transmission
-# 8.9%; 26 January was a market holiday; on 27 January Adani Enterprises fell about 19%; a 413-page
+# 8.9%; 26 January was a market holiday; on 27 January group bonds and shares fell again and Adani
+# Enterprises fell about 19%; a 413-page
 # response on 29 January; the FPO was fully subscribed on 31 January; on 1 February Adani
 # Enterprises fell 28% and Credit Suisse stopped taking the group's bonds as margin collateral,
 # and the FPO was called off that evening; RBI sought banks' exposure details on 2 February and
@@ -256,10 +257,7 @@ ADANI = [
          "Short seller alleges Adani Group used offshore shell companies to manipulate stock prices",
          "Hindenburg Research alleged that entities linked to the Adani Group manipulated share prices and raised questions about its accounting, which the group has previously denied."),
     post("2023-01-24T15:30:00Z", "did:plc:syn-ad-04", "Banks with big Adani exposure are going to get questions tomorrow. SBI, LIC holders take note"),
-    news("2023-01-24T16:10:00Z", "markets-tv.example",
-         "Adani Group dollar bonds slide in offshore trading after short seller report",
-         "Dollar bonds of Adani Ports and other group companies fell as investors weighed the fraud allegations."),
-    post("2023-01-24T18:20:00Z", "did:plc:syn-ad-05", "Adani Ports dollar bonds already down. Equity will follow at 9:15 IST"),
+    post("2023-01-24T18:20:00Z", "did:plc:syn-ad-05", "Adani Ports and Adani Enterprises at 9:15 IST tomorrow are going to be ugly"),
     news("2023-01-25T02:40:00Z", "wire-two.example",
          "Adani Group calls Hindenburg report malicious and baseless, says it complies with all laws",
          "The Adani Group rejected the short seller's allegations as baseless and said the timing of the report was meant to damage its share sale."),
@@ -274,6 +272,9 @@ ADANI = [
          "Adani Ports closes down 6.3% and Adani Transmission 8.9% as short seller report hits the group",
          "Adani Group stocks fell across the board. Adani Enterprises lost 1.5% ahead of its share sale."),
     post("2023-01-26T07:30:00Z", "did:plc:syn-ad-07", "Market holiday today. Tomorrow the Adani FPO opens into this mess"),
+    news("2023-01-27T04:30:00Z", "markets-tv.example",
+         "Adani group bonds and shares fall again as markets reopen after the holiday",
+         "Bonds and shares of Adani companies fell as trading resumed; Adani Green Energy and Adani Total Gas hit their daily limits."),
     news("2023-01-27T05:00:00Z", "india-wire.example",
          "Adani Enterprises plunges as the rout deepens on the first day of its share sale",
          "Adani Enterprises shares fell well below the offer price band as the selloff in group companies deepened."),
