@@ -6,7 +6,8 @@
 4. Corroboration: >= 3 independent publishers within 60 minutes, or one authoritative source
    (SEC filing, regulator, central bank, issuer statement, major wire). Coordinated reposts and
    lookalike domains never count.
-5. Not disputed: no official denial matched to the story.
+5. Not disputed: no official denial retracted the story. A denial of a story that was already
+   independently confirmed makes it "contested": it stays live, flagged, and can still trigger.
 
 The naive comparator fires on any single document whose 10 x |sentiment| exceeds 7, which is
 what an LLM-score-and-threshold pipeline does.
@@ -73,7 +74,9 @@ class TriggerGate:
                       detail=f"event confidence {sig.event.confidence:.2f} (need >= {cfg.min_confidence})"),
             GateCheck(name="corroboration", passed=corroborated, detail=corr_detail),
             GateCheck(name="not_disputed", passed=not c.disputed,
-                      detail="official denial matched" if c.disputed else "no denial"),
+                      detail="official denial matched" if c.disputed else
+                      "denied, but already confirmed by independent newsrooms: contested, not retracted"
+                      if "contested" in sig.flags else "no denial"),
         ]
         if sig.status == "retracted":
             decision = "RETRACT"

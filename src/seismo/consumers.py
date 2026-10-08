@@ -34,9 +34,12 @@ def build_consumers(settings, store, module_a: bool = True, module_b: bool = Tru
         try:
             from seismo.module_a.consumer import ModuleAConsumer
 
-            module = ModuleAConsumer.from_settings(settings, store)
-            gate.sinks.append(module.on_decision)
-            consumers.append(module)
+            for market in ("US", "IN"):
+                module = ModuleAConsumer.from_settings(settings, store, market=market)
+                if not module.members:
+                    continue
+                gate.sinks.append(module.on_decision)
+                consumers.append(module)
         except Exception:  # noqa: BLE001
             log.exception("Module A failed to start")
     return consumers

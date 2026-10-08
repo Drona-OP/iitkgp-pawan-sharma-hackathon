@@ -7,6 +7,12 @@ instrument, direction, notional, rate, maturity, collateral) that aggregates int
 way a bank's books do. Every obligor relationship and exposure is invented; public company names
 appear only as obligors, and internal ratings are synthetic, not agency ratings.
 
+The India desk (16 Nifty 50 names from data/universe_in.csv) is generated after the core book
+with its own seed, so adding it leaves every earlier trade unchanged. Its Adani group lines
+(Adani Enterprises and Adani Ports: loans, a dollar bond each, small equity stakes) are sized
+by hand, about 4% of the book, so a governance shock to one group is material but survivable,
+as India's large-exposure rules intend. Group membership drives contagion in the stress test.
+
     python -m seismo.module_b.blotter     # writes data/blotter/trade_blotter.csv
 """
 
@@ -23,6 +29,10 @@ from seismo.module_b.credit import NOTCH, SCALE
 
 AS_OF = date(2026, 9, 30)
 SEED = 2026
+SEED_INDIA = 2027
+GROUPS = {"ADANIENT.NS": "Adani", "ADANIPORTS.NS": "Adani"}
+# Hand-sized Adani lines in USD millions: (term loan, revolver limit, USD bond face, equity stake)
+ADANI_LINES = {"ADANIENT.NS": (420, 300, 150, 45), "ADANIPORTS.NS": (380, 200, 210, 35)}
 
 # Obligors that are not in the index universe, all synthetic.
 MIDCAP_NAMES_US = [
@@ -56,6 +66,7 @@ class Obligor:
     listed: bool
     bank: bool = False
     in_index: bool = False
+    group: str = ""
 
 
 @dataclass
@@ -209,10 +220,10 @@ def write_blotter(trades: list[Trade], obligors: list[Obligor], out_dir: Path) -
     with (out_dir / "obligors.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh, lineterminator="\n")
         w.writerow(["obligor_id", "name", "sector", "country", "internal_rating", "origination_rating",
-                    "listed", "bank", "index_member", "synthetic_exposure"])
+                    "listed", "bank", "index_member", "group", "synthetic_exposure"])
         for o in obligors:
             w.writerow([o.obligor_id, o.name, o.sector, o.country, o.rating, o.orig_rating,
-                        o.listed, o.bank, o.in_index, "true"])
+                        o.listed, o.bank, o.in_index, o.group, "true"])
 
 
 def read_rows(path: Path) -> list[dict[str, str]]:
@@ -220,10 +231,65 @@ def read_rows(path: Path) -> list[dict[str, str]]:
         return [r for r in csv.DictReader(fh)]
 
 
+def india_desk(rows: list[dict[str, str]], first_trade: int) -> tuple[list[Obligor], list[Trade]]:
+    """Obligors and trades for the 16 NSE names, on their own seed (the core book is untouched)."""
+    rng = random.Random(SEED_INDIA)
+    obligors: list[Obligor] = []
+    for r in rows:
+        fin = r["sector"] == "Financials"
+        rating = "BBB-" if r["ticker"] in GROUPS else _rating_between(rng, "BBB-", "BBB+")
+        obligors.append(Obligor(r["ticker"], r["name"], r["sector"], "IN", rating, rating, True, fin, False,
+                                GROUPS.get(r["ticker"], "")))
+    trades: list[Trade] = []
+    n = first_trade
+
+    def tid() -> str:
+        nonlocal n
+        n += 1
+        return f"T{n:05d}"
+
+    def past(days: int) -> date:
+        return AS_OF - timedelta(days=rng.randint(30, days))
+
+    def future(lo: float, hi: float) -> date:
+        return AS_OF + timedelta(days=int(365 * rng.uniform(lo, hi)))
+
+    for ob in obligors:
+        if ob.obligor_id in ADANI_LINES:
+            loan, revolver, bond, stake = ADANI_LINES[ob.obligor_id]
+            facilities = [("TERM_LOAN", loan * 1e6, 1.0), ("REVOLVER", revolver * 1e6, 0.6)]
+        else:
+            loan, bond, stake = rng.uniform(120, 380), (rng.uniform(60, 160) if ob.bank or rng.random() < 0.3 else 0), 0
+            facilities = [("TERM_LOAN", round(loan, 1) * 1e6, 1.0)]
+        for i, (kind, limit, share) in enumerate(facilities):
+            fac = f"F-{ob.obligor_id}-{i + 1}"
+            mat = future(1.5, 6.0)
+            rate = round(rng.uniform(0.078, 0.095), 4)
+            collateral = "SENIOR_UNSECURED" if kind == "REVOLVER" else rng.choice(["SECURED", "SENIOR_UNSECURED"])
+            trades.append(Trade(tid(), past(1500), ob.obligor_id, kind, "COMMIT", limit, rate, mat, collateral, "INR", fac))
+            trades.append(Trade(tid(), past(1200), ob.obligor_id, kind, "DRAW", round(limit * share, -3), rate, mat,
+                                collateral, "INR", fac))
+        if bond:
+            mat = future(3.0, 9.0)
+            coupon = round(rng.uniform(0.04, 0.055), 4)
+            trades.append(Trade(tid(), past(1500), ob.obligor_id, "BOND", "BUY", round(bond, 0) * 1e6, coupon, mat,
+                                "SENIOR_UNSECURED", "USD", f"B-{ob.obligor_id}-{mat:%Y}"))
+        if stake:
+            trades.append(Trade(tid(), past(900), ob.obligor_id, "EQUITY", "BUY", stake * 1e6, 0.0, AS_OF, "NONE",
+                                "INR", f"EQ-{ob.obligor_id}"))
+    return obligors, trades
+
+
 def generate(root: Path) -> tuple[list[Obligor], list[Trade]]:
     rng = random.Random(SEED)
     obligors = build_obligors(read_rows(root / "data" / "universe.csv"), read_rows(root / "data" / "watchlist.csv"), rng)
-    return obligors, generate_trades(obligors, rng)
+    trades = generate_trades(obligors, rng)
+    india = root / "data" / "universe_in.csv"
+    if india.exists():
+        more_obligors, more_trades = india_desk(read_rows(india), len(trades))
+        obligors += more_obligors
+        trades = sorted(trades + more_trades, key=lambda t: (t.trade_date, t.trade_id))
+    return obligors, trades
 
 
 def aggregate(trades: list[Trade]) -> dict[str, dict]:

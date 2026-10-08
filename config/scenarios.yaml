@@ -38,6 +38,13 @@ scenarios:
     start: 2025-01-24
     end: 2025-01-27
     captures: "Sector-specific idiosyncratic shock (semiconductors)"
+  adani_2023:
+    label: "Adani-Hindenburg governance shock (India)"
+    start: 2023-01-24       # base is the NSE close before the report reached Indian markets
+    end: 2023-02-03
+    captures: "Group-wide equity collapse, dollar-bond selloff, Indian bank stocks hit, market barely moves"
+    epicenters: [ADANIENT.NS, ADANIPORTS.NS]
+    scope: india            # a local shock: only Indian factors move (US markets rallied that week)
 
 # Event class / subtype -> scenario. "CLASS/*" is the class-level fallback.
 event_map:
@@ -54,6 +61,7 @@ event_map:
   MACROECONOMIC/INFLATION: rate_shock_2022
   MACROECONOMIC/PANDEMIC: covid_2020
   PRODUCT_STRATEGY/COMPETITIVE_THREAT: deepseek_2025
+  MANAGEMENT_GOVERNANCE/FRAUD_ALLEGATION: adani_2023
 
 # Severity: the analog is scaled by impact, and the Vasicek systematic factor Z deepens with it.
 severity:
@@ -64,6 +72,8 @@ severity:
 idiosyncratic:
   CREDIT_EVENT: {notches: 3, equity_shock: -0.5, spread_bp_per_notch: 75, default_min_impact: 10}
   PRODUCT_STRATEGY: {notches: 1, equity_shock: -0.15}
+  # A fraud allegation hits the accused group, not its sector: group contagion instead of sector.
+  MANAGEMENT_GOVERNANCE: {notches: 3, equity_shock: -0.3, spread_bp_per_notch: 75, contagion: group}
   default: {notches: 1, equity_shock: -0.1}
 
 # Subtypes where the obligor at the centre is assumed to default at or above default_min_impact.
@@ -71,6 +81,8 @@ default_subtypes: [BANK_RUN, LIQUIDITY_STRESS, BANKRUPTCY, DEFAULT, ACCELERATION
 
 # Same-sector obligors (contagion) take this share of the idiosyncratic notches, rounded to the nearest notch.
 contagion_share: 0.34
+# Other companies of the same business group take this share when contagion is "group".
+group_share: 0.67
 
 # Probability weights for the multi-scenario ECL (RBI-style base / adverse / severe).
 ecl_weights: {base: 0.5, adverse: 0.3, severe: 0.2}

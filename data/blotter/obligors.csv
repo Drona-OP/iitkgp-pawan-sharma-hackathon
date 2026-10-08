@@ -1,61 +1,77 @@
-obligor_id,name,sector,country,internal_rating,origination_rating,listed,bank,index_member,synthetic_exposure
-AAPL,Apple Inc.,Information Technology,US,AA-,AA-,True,False,True,true
-MSFT,Microsoft Corp.,Information Technology,US,A,A,True,False,True,true
-NVDA,NVIDIA Corp.,Information Technology,US,BBB+,BBB+,True,False,True,true
-GOOGL,Alphabet Inc.,Communication Services,US,BBB+,BBB+,True,False,True,true
-META,Meta Platforms Inc.,Communication Services,US,AA-,AA-,True,False,True,true
-AMZN,Amazon.com Inc.,Consumer Discretionary,US,A+,A+,True,False,True,true
-TSLA,Tesla Inc.,Consumer Discretionary,US,BBB+,BBB+,True,False,True,true
-JPM,JPMorgan Chase & Co.,Financials,US,A-,A-,True,True,True,true
-BAC,Bank of America Corp.,Financials,US,A-,A-,True,True,True,true
-LLY,Eli Lilly and Co.,Health Care,US,A-,A-,True,False,True,true
-UNH,UnitedHealth Group Inc.,Health Care,US,BBB+,BBB+,True,False,True,true
-XOM,Exxon Mobil Corp.,Energy,US,BBB+,BBB+,True,False,True,true
-CVX,Chevron Corp.,Energy,US,A-,A-,True,False,True,true
-CAT,Caterpillar Inc.,Industrials,US,BBB+,BBB+,True,False,True,true
-BA,Boeing Co.,Industrials,US,A-,A-,True,False,True,true
-PG,Procter & Gamble Co.,Consumer Staples,US,A+,A+,True,False,True,true
-KO,Coca-Cola Co.,Consumer Staples,US,AA-,AA-,True,False,True,true
-NEE,NextEra Energy Inc.,Utilities,US,BBB+,BBB+,True,False,True,true
-LIN,Linde plc,Materials,US,AA-,AA-,True,False,True,true
-AMT,American Tower Corp.,Real Estate,US,AA-,AA-,True,False,True,true
-SIVB,SVB Financial Group,Financials,US,BBB,BBB,True,True,False,true
-FRC,First Republic Bank,Financials,US,BBB,BBB,True,True,False,true
-SBNY,Signature Bank,Financials,US,BBB,BBB,True,True,False,true
-CS,Credit Suisse Group AG,Financials,CH,BBB+,BBB+,True,True,False,true
-HNB,Harbor National Bank,Financials,US,BBB,BBB,True,True,False,true
-SYN01,Meridian Logistics (synthetic),Utilities,US,BB+,BB+,False,False,False,true
-SYN02,Bluewater Chemicals (synthetic),Utilities,US,BB+,BBB,False,False,False,true
-SYN03,Granite Peak Homebuilders (synthetic),Information Technology,US,BB+,BB+,False,False,False,true
-SYN04,Northstar Freight (synthetic),Health Care,US,BB+,BB+,False,False,False,true
-SYN05,Cobalt Ridge Mining (synthetic),Real Estate,US,B+,BB,False,False,False,true
-SYN06,Harborview Hospitals (synthetic),Health Care,US,BB+,BBB,False,False,False,true
-SYN07,Silverline Software (synthetic),Real Estate,US,BBB-,BBB,False,False,False,true
-SYN08,Prairie Grain Co (synthetic),Utilities,US,BB+,BB+,False,False,False,true
-SYN09,Redwood Paper Mills (synthetic),Communication Services,US,BB,BBB-,False,False,False,true
-SYN10,Summit Auto Parts (synthetic),Health Care,US,BB+,BB+,False,False,False,true
-SYN11,Ironclad Steelworks (synthetic),Information Technology,US,BB+,BB+,False,False,False,true
-SYN12,Crescent Hotels (synthetic),Communication Services,US,BBB,BBB,False,False,False,true
-SYN13,Lakeshore Utilities (synthetic),Materials,US,BB-,BB-,False,False,False,true
-SYN14,Pinnacle Retail Group (synthetic),Communication Services,US,BB-,BB,False,False,False,true
-SYN15,Atlas Aviation Leasing (synthetic),Real Estate,US,BB,BB,False,False,False,true
-SYN16,Vantage Media (synthetic),Communication Services,US,BB+,BB+,False,False,False,true
-SYN17,Keystone Rail Services (synthetic),Real Estate,US,BB-,BB,False,False,False,true
-SYN18,Evergreen Foods (synthetic),Consumer Staples,US,BBB-,BBB,False,False,False,true
-SYN19,Beacon Semiconductor (synthetic),Real Estate,US,BBB-,BBB-,False,False,False,true
-SYN20,Tidewater Shipping (synthetic),Communication Services,US,BB+,BBB,False,False,False,true
-SYN21,Deccan Infra Projects (synthetic),Consumer Discretionary,IN,BB,BB,False,False,False,true
-SYN22,Ganga Textiles (synthetic),Materials,IN,BB,BB,False,False,False,true
-SYN23,Konkan Power (synthetic),Utilities,IN,B+,BB,False,False,False,true
-SYN24,Sahyadri Cement (synthetic),Real Estate,IN,BB-,BB-,False,False,False,true
-SYN25,Narmada Chemicals (synthetic),Energy,IN,B+,BB,False,False,False,true
-SYN26,Malabar Spices Exports (synthetic),Real Estate,IN,B,BB-,False,False,False,true
-SYN27,Vindhya Steel (synthetic),Information Technology,IN,BB,BB,False,False,False,true
-SYN28,Coromandel Agro (synthetic),Energy,IN,BBB-,BBB-,False,False,False,true
-SYN29,Aravalli Auto Components (synthetic),Consumer Discretionary,IN,BBB,BBB,False,False,False,true
-SYN30,Kaveri Pharma (synthetic),Real Estate,IN,BB-,BB-,False,False,False,true
-SYN31,Himalaya Hydro (synthetic),Consumer Staples,IN,BB,BB,False,False,False,true
-SYN32,Thar Solar (synthetic),Utilities,IN,BB-,BB+,False,False,False,true
-SYN33,Brahmaputra Logistics (synthetic),Utilities,IN,BB-,BB,False,False,False,true
-SYN34,Nilgiri Tea Estates (synthetic),Industrials,IN,BB-,BB,False,False,False,true
-SYN35,Godavari Fertilisers (synthetic),Utilities,IN,BB+,BB+,False,False,False,true
+obligor_id,name,sector,country,internal_rating,origination_rating,listed,bank,index_member,group,synthetic_exposure
+AAPL,Apple Inc.,Information Technology,US,AA-,AA-,True,False,True,,true
+MSFT,Microsoft Corp.,Information Technology,US,A,A,True,False,True,,true
+NVDA,NVIDIA Corp.,Information Technology,US,BBB+,BBB+,True,False,True,,true
+GOOGL,Alphabet Inc.,Communication Services,US,BBB+,BBB+,True,False,True,,true
+META,Meta Platforms Inc.,Communication Services,US,AA-,AA-,True,False,True,,true
+AMZN,Amazon.com Inc.,Consumer Discretionary,US,A+,A+,True,False,True,,true
+TSLA,Tesla Inc.,Consumer Discretionary,US,BBB+,BBB+,True,False,True,,true
+JPM,JPMorgan Chase & Co.,Financials,US,A-,A-,True,True,True,,true
+BAC,Bank of America Corp.,Financials,US,A-,A-,True,True,True,,true
+LLY,Eli Lilly and Co.,Health Care,US,A-,A-,True,False,True,,true
+UNH,UnitedHealth Group Inc.,Health Care,US,BBB+,BBB+,True,False,True,,true
+XOM,Exxon Mobil Corp.,Energy,US,BBB+,BBB+,True,False,True,,true
+CVX,Chevron Corp.,Energy,US,A-,A-,True,False,True,,true
+CAT,Caterpillar Inc.,Industrials,US,BBB+,BBB+,True,False,True,,true
+BA,Boeing Co.,Industrials,US,A-,A-,True,False,True,,true
+PG,Procter & Gamble Co.,Consumer Staples,US,A+,A+,True,False,True,,true
+KO,Coca-Cola Co.,Consumer Staples,US,AA-,AA-,True,False,True,,true
+NEE,NextEra Energy Inc.,Utilities,US,BBB+,BBB+,True,False,True,,true
+LIN,Linde plc,Materials,US,AA-,AA-,True,False,True,,true
+AMT,American Tower Corp.,Real Estate,US,AA-,AA-,True,False,True,,true
+SIVB,SVB Financial Group,Financials,US,BBB,BBB,True,True,False,,true
+FRC,First Republic Bank,Financials,US,BBB,BBB,True,True,False,,true
+SBNY,Signature Bank,Financials,US,BBB,BBB,True,True,False,,true
+CS,Credit Suisse Group AG,Financials,CH,BBB+,BBB+,True,True,False,,true
+HNB,Harbor National Bank,Financials,US,BBB,BBB,True,True,False,,true
+SYN01,Meridian Logistics (synthetic),Utilities,US,BB+,BB+,False,False,False,,true
+SYN02,Bluewater Chemicals (synthetic),Utilities,US,BB+,BBB,False,False,False,,true
+SYN03,Granite Peak Homebuilders (synthetic),Information Technology,US,BB+,BB+,False,False,False,,true
+SYN04,Northstar Freight (synthetic),Health Care,US,BB+,BB+,False,False,False,,true
+SYN05,Cobalt Ridge Mining (synthetic),Real Estate,US,B+,BB,False,False,False,,true
+SYN06,Harborview Hospitals (synthetic),Health Care,US,BB+,BBB,False,False,False,,true
+SYN07,Silverline Software (synthetic),Real Estate,US,BBB-,BBB,False,False,False,,true
+SYN08,Prairie Grain Co (synthetic),Utilities,US,BB+,BB+,False,False,False,,true
+SYN09,Redwood Paper Mills (synthetic),Communication Services,US,BB,BBB-,False,False,False,,true
+SYN10,Summit Auto Parts (synthetic),Health Care,US,BB+,BB+,False,False,False,,true
+SYN11,Ironclad Steelworks (synthetic),Information Technology,US,BB+,BB+,False,False,False,,true
+SYN12,Crescent Hotels (synthetic),Communication Services,US,BBB,BBB,False,False,False,,true
+SYN13,Lakeshore Utilities (synthetic),Materials,US,BB-,BB-,False,False,False,,true
+SYN14,Pinnacle Retail Group (synthetic),Communication Services,US,BB-,BB,False,False,False,,true
+SYN15,Atlas Aviation Leasing (synthetic),Real Estate,US,BB,BB,False,False,False,,true
+SYN16,Vantage Media (synthetic),Communication Services,US,BB+,BB+,False,False,False,,true
+SYN17,Keystone Rail Services (synthetic),Real Estate,US,BB-,BB,False,False,False,,true
+SYN18,Evergreen Foods (synthetic),Consumer Staples,US,BBB-,BBB,False,False,False,,true
+SYN19,Beacon Semiconductor (synthetic),Real Estate,US,BBB-,BBB-,False,False,False,,true
+SYN20,Tidewater Shipping (synthetic),Communication Services,US,BB+,BBB,False,False,False,,true
+SYN21,Deccan Infra Projects (synthetic),Consumer Discretionary,IN,BB,BB,False,False,False,,true
+SYN22,Ganga Textiles (synthetic),Materials,IN,BB,BB,False,False,False,,true
+SYN23,Konkan Power (synthetic),Utilities,IN,B+,BB,False,False,False,,true
+SYN24,Sahyadri Cement (synthetic),Real Estate,IN,BB-,BB-,False,False,False,,true
+SYN25,Narmada Chemicals (synthetic),Energy,IN,B+,BB,False,False,False,,true
+SYN26,Malabar Spices Exports (synthetic),Real Estate,IN,B,BB-,False,False,False,,true
+SYN27,Vindhya Steel (synthetic),Information Technology,IN,BB,BB,False,False,False,,true
+SYN28,Coromandel Agro (synthetic),Energy,IN,BBB-,BBB-,False,False,False,,true
+SYN29,Aravalli Auto Components (synthetic),Consumer Discretionary,IN,BBB,BBB,False,False,False,,true
+SYN30,Kaveri Pharma (synthetic),Real Estate,IN,BB-,BB-,False,False,False,,true
+SYN31,Himalaya Hydro (synthetic),Consumer Staples,IN,BB,BB,False,False,False,,true
+SYN32,Thar Solar (synthetic),Utilities,IN,BB-,BB+,False,False,False,,true
+SYN33,Brahmaputra Logistics (synthetic),Utilities,IN,BB-,BB,False,False,False,,true
+SYN34,Nilgiri Tea Estates (synthetic),Industrials,IN,BB-,BB,False,False,False,,true
+SYN35,Godavari Fertilisers (synthetic),Utilities,IN,BB+,BB+,False,False,False,,true
+RELIANCE.NS,Reliance Industries Ltd,Energy,IN,BBB+,BBB+,True,False,False,,true
+HDFCBANK.NS,HDFC Bank Ltd,Financials,IN,BBB,BBB,True,True,False,,true
+ICICIBANK.NS,ICICI Bank Ltd,Financials,IN,BBB+,BBB+,True,True,False,,true
+INFY.NS,Infosys Ltd,Information Technology,IN,BBB+,BBB+,True,False,False,,true
+TCS.NS,Tata Consultancy Services Ltd,Information Technology,IN,BBB-,BBB-,True,False,False,,true
+ITC.NS,ITC Ltd,Consumer Staples,IN,BBB,BBB,True,False,False,,true
+LT.NS,Larsen & Toubro Ltd,Industrials,IN,BBB,BBB,True,False,False,,true
+SBIN.NS,State Bank of India,Financials,IN,BBB-,BBB-,True,True,False,,true
+BHARTIARTL.NS,Bharti Airtel Ltd,Communication Services,IN,BBB+,BBB+,True,False,False,,true
+AXISBANK.NS,Axis Bank Ltd,Financials,IN,BBB,BBB,True,True,False,,true
+KOTAKBANK.NS,Kotak Mahindra Bank Ltd,Financials,IN,BBB+,BBB+,True,True,False,,true
+HINDUNILVR.NS,Hindustan Unilever Ltd,Consumer Staples,IN,BBB,BBB,True,False,False,,true
+BAJFINANCE.NS,Bajaj Finance Ltd,Financials,IN,BBB-,BBB-,True,True,False,,true
+MARUTI.NS,Maruti Suzuki India Ltd,Consumer Discretionary,IN,BBB+,BBB+,True,False,False,,true
+ADANIENT.NS,Adani Enterprises Ltd,Industrials,IN,BBB-,BBB-,True,False,False,Adani,true
+ADANIPORTS.NS,Adani Ports and SEZ Ltd,Industrials,IN,BBB-,BBB-,True,False,False,Adani,true

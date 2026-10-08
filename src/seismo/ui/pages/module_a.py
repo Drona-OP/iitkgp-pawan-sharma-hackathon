@@ -27,13 +27,16 @@ PALETTE = ["#4FA3A5", "#7A9CC6", "#E0B04C", "#C77DBA", "#6CC4A4", "#E8873A", "#9
            "#81C784", "#64B5F6", "#BA68C8", "#A1887F"]
 
 
-def recompute(kappa: float, strict: bool, half_life: float) -> list[dict]:
+INDICES = {"US": "US: 20 S&P 100 names", "IN": "India: 16 Nifty 50 names"}
+
+
+def recompute(kappa: float, strict: bool, half_life: float, market: str = "US") -> list[dict]:
     """Re-run Module A over the signals already in the store with different controls."""
     from seismo.module_a.consumer import ModuleAConsumer
     from seismo.scenarios import build_gate
     from seismo.signals.gate import GateConsumer
 
-    module = ModuleAConsumer.from_settings(settings, store=None, strict=strict)
+    module = ModuleAConsumer.from_settings(settings, store=None, strict=strict, market=market)
     module.cfg = replace(module.cfg, kappa=kappa, half_life_hours=half_life)
     module.lam = math.log(2) / (half_life * 3600)
     gate = GateConsumer(build_gate(settings), sinks=[module.on_decision])
@@ -47,9 +50,14 @@ def recompute(kappa: float, strict: bool, half_life: float) -> list[dict]:
 
 def render() -> None:
     header("Module A - Tactical index rebalancer",
-           "A risk overlay on a 20-stock S&P 100 index: filtered, decayed entity sentiment tilts capped market-cap "
-           "weights, scaled by inverse volatility, inside name and sector caps, with a circuit breaker for "
-           "corroborated credit and operational events.")
+           "A risk overlay on a 20-stock S&P 100 index or a 16-stock Nifty 50 index: filtered, decayed entity "
+           "sentiment tilts capped market-cap weights, scaled by inverse volatility, inside name and sector caps, "
+           "with a circuit breaker for corroborated credit, operational and fraud events.")
+    us, india = records("weights"), records("weights_in")
+    latest_in = india[-1]["as_of"] if india else ""
+    latest_us = us[-1]["as_of"] if us else ""
+    default = 1 if india and (not us or latest_in >= latest_us) else 0
+    market = st.radio("Index", list(INDICES), index=default, format_func=INDICES.get, horizontal=True)
     with st.expander("Controls (re-run on the stored signals)", expanded=False):
         c1, c2, c3 = st.columns(3)
         kappa = c1.slider("Aggressiveness kappa", 0.0, 1.5, float(settings.get("module_a.kappa", 0.6)), 0.1)
@@ -57,9 +65,9 @@ def render() -> None:
         strict = c3.toggle("Strict S&P DJI filters", value=False,
                            help="Relevance 100, novelty 100, |sentiment| >= 0.6, as in the S&P 500 RavenPack AI Sentiment Index")
         rerun = st.button("Apply controls")
-    snaps = recompute(kappa, strict, half) if rerun else records("weights")
+    snaps = recompute(kappa, strict, half, market) if rerun else (india if market == "IN" else us)
     if not snaps:
-        st.info("No index snapshots yet. Replay the DeepSeek or tariff pack from the sidebar.")
+        st.info("No index snapshots yet. Replay the DeepSeek or tariff pack (US) or the Adani pack (India) from the sidebar.")
         return
     tickers = list(snaps[0]["bench"])
     times = [pd.Timestamp(s["as_of"]) for s in snaps]

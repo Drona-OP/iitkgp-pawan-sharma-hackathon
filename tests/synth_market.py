@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 PRICE_COLS = ["SPY", "KRE", "XLK", "XLC", "XLY", "XLF", "XLV", "XLE", "XLI", "XLP", "XLU", "XLB", "XLRE",
-              "VIX", "BRENT", "GOLD", "DXY", "USDINR", "EURUSD"]
+              "VIX", "BRENT", "GOLD", "DXY", "USDINR", "EURUSD", "NIFTY50", "NIFTYBANK", "ADANIENT.NS", "ADANIPORTS.NS"]
 FRED_COLS = ["UST_3M", "UST_2Y", "UST_5Y", "UST_10Y", "UST_30Y", "BAA_10Y", "IG_OAS", "BBB_OAS", "HY_OAS"]
 WINDOWS = {  # start, end, equity move, 2y bp, spread bp, vix pts
     "2008-09-12": ("2008-10-10", -0.30, -80, 250, 40),
@@ -21,7 +21,10 @@ WINDOWS = {  # start, end, equity move, 2y bp, spread bp, vix pts
     "2023-03-08": ("2023-03-17", -0.05, -100, 50, 10),
     "2025-01-24": ("2025-01-27", -0.04, -10, 5, 5),
     "2025-04-02": ("2025-04-08", -0.12, -30, 80, 25),
+    "2023-01-24": ("2023-02-03", -0.03, 0, 0, 0),
 }
+# A group-specific crash on top of the window move (the Adani names in early 2023).
+NAME_CRASH = {"2023-01-24": {"ADANIENT.NS": -0.55, "ADANIPORTS.NS": -0.35}}
 
 
 def write_synthetic_market(out: Path, seed: int = 7) -> None:
@@ -44,7 +47,8 @@ def write_synthetic_market(out: Path, seed: int = 7) -> None:
             if c in ("VIX", "GOLD", "DXY", "USDINR", "EURUSD", "BRENT"):
                 continue
             mult = 2.5 if c == "KRE" and start == "2023-03-08" else 1.0
-            prices.loc[w, c] = prices.loc[w, c].to_numpy() * (1 + eq * mult * ramp)
+            move = NAME_CRASH.get(start, {}).get(c, eq * mult)
+            prices.loc[w, c] = prices.loc[w, c].to_numpy() * (1 + move * ramp)
         prices.loc[w, "VIX"] = prices.loc[w, "VIX"].to_numpy() + vix * ramp
         for c in ("UST_3M", "UST_2Y", "UST_5Y", "UST_10Y", "UST_30Y"):
             scale = {"UST_3M": 0.8, "UST_2Y": 1.0, "UST_5Y": 0.8, "UST_10Y": 0.6, "UST_30Y": 0.4}[c]

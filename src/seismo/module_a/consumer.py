@@ -4,6 +4,10 @@ Subscribes to event-grain signals for index members (and to gate decisions for t
 breaker), keeps a filtered, decayed sentiment index per name, and records a weights snapshot
 whenever the proposed change clears the no-trade band. A naive comparator (latest document
 sentiment, proportional reweighting, no filters or constraints) runs alongside on the same feed.
+
+Two indices share the code: "US" (20 S&P 100 names, caps from SEC shares x close) and "IN"
+(16 Nifty 50 names). The India benchmark is built when the first signal arrives, from shares
+outstanding x the NSE close before that moment, so a 2023 replay starts from 2023 weights.
 """
 
 from __future__ import annotations
@@ -13,53 +17,76 @@ import math
 from datetime import datetime
 
 from seismo.module_a.index import Holding, TiltConfig, capped_cap_weights, target_weights, turnover
-from seismo.module_a.market import FALLBACK_VOL, ewma_vol, load_caps
+from seismo.module_a.market import FALLBACK_VOL, caps_from_shares, ewma_vol, load_caps
 from seismo.schemas import EventClass, GateDecision, Signal, stable_id
 
 BREAKER_CLASSES = {EventClass.CREDIT_EVENT, EventClass.OPERATIONAL_ESG}
+BREAKER_SUBTYPES = {"FRAUD_ALLEGATION"}   # a corroborated fraud report also trips the breaker
+RECORD_KIND = {"US": "weights", "IN": "weights_in"}
 
 
 class ModuleAConsumer:
     def __init__(self, holdings: dict[str, Holding], store, cfg: TiltConfig | None = None,
-                 inputs: str = "market-data") -> None:
-        self.holdings = holdings
+                 inputs: str = "market-data", market: str = "US", members: set[str] | None = None,
+                 init=None) -> None:
         self.store = store
         self.cfg = cfg or TiltConfig()
-        self.inputs = inputs
+        self.market = market
         self.lam = math.log(2) / (self.cfg.half_life_hours * 3600)
-        self.bench = {t: h.bench for t, h in holdings.items()}
-        self.weights = dict(self.bench)
-        self.naive = dict(self.bench)
+        self.members = set(members or holdings)
+        self._init = init   # callable(as_of) -> (holdings, inputs), for a benchmark dated to the replay
         self.naive_sent: dict[str, float] = {}
         self.naive_turnover = 0.0
         self.turnover_total = 0.0
-        self.events: dict[str, dict[str, Signal]] = {t: {} for t in holdings}
         self.breaker: set[str] = set()
         self._qualified: set[str] = set()
         self.started = False
         self.snapshots: list[dict] = []
+        self._setup(holdings, inputs)
+
+    def _setup(self, holdings: dict[str, Holding], inputs: str) -> None:
+        self.holdings = holdings
+        self.inputs = inputs
+        self.bench = {t: h.bench for t, h in holdings.items()}
+        self.weights = dict(self.bench)
+        self.naive = dict(self.bench)
+        self.events: dict[str, dict[str, Signal]] = {t: {} for t in holdings}
+
+    def _ensure(self, now: datetime) -> None:
+        if self._init is not None and not self.holdings:
+            self._setup(*self._init(now))
 
     @classmethod
-    def from_settings(cls, settings, store, strict: bool = False) -> ModuleAConsumer:
+    def from_settings(cls, settings, store, strict: bool = False, market: str = "US") -> ModuleAConsumer:
         from seismo.universe import Universe
 
         universe = Universe.load(settings.path("universe.path"))
-        members = universe.index_members()
+        members = universe.index_members(market)
         market_dir = settings.root / "data" / "market"
-        caps = load_caps(market_dir)
-        vols = ewma_vol(market_dir, [e.entity_id for e in members])
-        inputs = "market-data" if caps and vols else "fallback"
-        bench = capped_cap_weights(caps or {e.entity_id: 1.0 for e in members}, 0.15)
-        holdings = {
-            e.entity_id: Holding(e.entity_id, e.sector or "Unknown", bench.get(e.entity_id, 0.0),
-                                 (vols or {}).get(e.entity_id, FALLBACK_VOL))
-            for e in members
-        }
         cfg = TiltConfig.strict() if strict else TiltConfig(
             kappa=float(settings.get("module_a.kappa", 0.6)),
             half_life_hours=float(settings.get("aggregation.half_life_hours", 6.0)),
         )
-        return cls(holdings, store, cfg, inputs)
+
+        def holdings_for(caps, vols) -> dict[str, Holding]:
+            bench = capped_cap_weights(caps or {e.entity_id: 1.0 for e in members}, 0.15)
+            return {
+                e.entity_id: Holding(e.entity_id, e.sector or "Unknown", bench.get(e.entity_id, 0.0),
+                                     (vols or {}).get(e.entity_id, FALLBACK_VOL))
+                for e in members
+            }
+
+        if market == "US":
+            caps = load_caps(market_dir)
+            vols = ewma_vol(market_dir, [e.entity_id for e in members])
+            return cls(holdings_for(caps, vols), store, cfg, "market-data" if caps and vols else "fallback")
+
+        def init(as_of: datetime):
+            caps = caps_from_shares(market_dir, [e.entity_id for e in members], as_of)
+            vols = ewma_vol(market_dir, [e.entity_id for e in members], as_of)
+            return holdings_for(caps, vols), "market-data" if caps and vols else "fallback"
+
+        return cls({}, store, cfg, market=market, members={e.entity_id for e in members}, init=init)
 
     # ------------------------------------------------------------------ inputs
     def qualifies(self, sig: Signal) -> bool:
@@ -101,8 +128,9 @@ class ModuleAConsumer:
     # ------------------------------------------------------------------ bus
     def on_signal(self, sig: Signal) -> None:
         t = sig.entity.id
-        if t not in self.holdings:
+        if t not in self.members:
             return
+        self._ensure(sig.as_of)
         if sig.grain == "document":
             self.naive_sent[t] = sig.sentiment_score
             raw = {k: self.bench[k] * max(0.0, 1 + self.naive_sent.get(k, 0.0)) for k in self.bench}
@@ -118,9 +146,11 @@ class ModuleAConsumer:
 
     def on_decision(self, d: GateDecision) -> None:
         t = d.entity_id
-        if t not in self.holdings:
+        if t not in self.members:
             return
-        if d.decision == "TRIGGER" and d.event.primary in BREAKER_CLASSES and d.impact_score >= 8:
+        self._ensure(d.as_of)
+        breaker_event = d.event.primary in BREAKER_CLASSES or (d.event.subtype or "") in BREAKER_SUBTYPES
+        if d.decision == "TRIGGER" and breaker_event and d.impact_score >= 8:
             if t not in self.breaker:
                 self.breaker.add(t)
                 self.rebalance(d.as_of, f"{t}: risk circuit breaker ({d.event.primary.value}, impact {d.impact_score})", force=True)
@@ -181,15 +211,16 @@ class ModuleAConsumer:
             "attribution": attribution,
             "trigger_signal": trigger.signal_id if trigger else None,
             "inputs": self.inputs,
+            "market": self.market,
             "config": {"kappa": self.cfg.kappa, "half_life_hours": self.cfg.half_life_hours,
                        "name_cap": self.cfg.name_cap, "active_cap": self.cfg.active_cap, "band": self.cfg.band,
                        "strict": self.cfg.min_abs_sentiment >= 0.6},
         }
         self.snapshots.append(snap)
         if self.store is not None:
-            self.store.put_record("weights", snap["snapshot_id"], now, json.dumps(snap))
+            self.store.put_record(RECORD_KIND.get(self.market, "weights"), snap["snapshot_id"], now, json.dumps(snap))
         return snap
 
 
-def load_snapshots(store) -> list[dict]:
-    return [json.loads(r) for r in store.records("weights")]
+def load_snapshots(store, market: str = "US") -> list[dict]:
+    return [json.loads(r) for r in store.records(RECORD_KIND.get(market, "weights"))]

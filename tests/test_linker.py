@@ -53,3 +53,11 @@ def test_overlapping_aliases_count_once(universe, make_doc):
     doc = make_doc(title="Exxon Mobil raises output")
     xom = next(m for m in EntityLinker(universe).link(doc) if m.entity_id == "XOM")
     assert len(xom.spans) == 1 and xom.surface == "Exxon Mobil"
+
+
+def test_the_longest_name_wins_across_entities(make_doc, universe):
+    from seismo.nlp.linker import EntityLinker
+
+    doc = make_doc(title="Adani Ports shares fall 6% after short seller report")
+    ids = {m.entity_id for m in EntityLinker(universe).link(doc)}
+    assert ids == {"ADANIPORTS.NS"}

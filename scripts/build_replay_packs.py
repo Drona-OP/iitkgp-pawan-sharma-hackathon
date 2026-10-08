@@ -1,9 +1,9 @@
-"""Write the five replay packs in data/replay/ (deterministic; rerun after editing).
+"""Write the six replay packs in data/replay/ (deterministic; rerun after editing).
 
     python scripts/build_replay_packs.py
 
 What these packs are, stated plainly:
-- svb_2023, deepseek_2025 and tariff_2025 are SYNTHETIC RECONSTRUCTIONS of public events. Each
+- svb_2023, deepseek_2025, tariff_2025 and adani_2023 are SYNTHETIC RECONSTRUCTIONS of public events. Each
   headline paraphrases facts that were widely reported at the time and is placed at the
   approximate time it became public. Publishers are ".example" stand-ins (RFC 2606) with a
   credibility tier, so no real outlet is ever quoted with words it did not write. Social posts
@@ -12,6 +12,10 @@ What these packs are, stated plainly:
   shape of the May 2023 fake-Pentagon-explosion episode: a lookalike news account, a swarm of
   near-identical reposts from new accounts, then an official denial.
 - quiet_day is a fictional calm session used as a control: nothing should trigger.
+
+The real-news packs (svb_2023_gdelt, adani_2023_gdelt, control_2024_gdelt) are different: they
+are built by `python -m seismo.ingest.gdelt_replay` from real article URLs and timestamps in
+data/gdelt/, not by this script.
 
 `python -m seismo live --record ...` produces real packs from GDELT, EDGAR and Bluesky; those
 replace the synthetic layer wherever live coverage exists.
@@ -30,6 +34,7 @@ HEADER = {
     "svb_2023": "SYNTHETIC RECONSTRUCTION of the SVB failure, 8-13 March 2023. Paraphrased headlines timed to the public record; .example publishers; invented social posts.",
     "deepseek_2025": "SYNTHETIC RECONSTRUCTION of the DeepSeek shock, 20-28 January 2025. Paraphrased headlines timed to the public record; .example publishers; invented social posts.",
     "tariff_2025": "SYNTHETIC RECONSTRUCTION of the April 2025 tariff shock, 2-9 April 2025. Paraphrased headlines timed to the public record; .example publishers; invented social posts.",
+    "adani_2023": "SYNTHETIC RECONSTRUCTION of the Adani-Hindenburg episode, 24 January - 3 February 2023. Paraphrased headlines timed to the public record (times approximate); .example publishers; invented social posts.",
     "red_team": "FICTIONAL red-team scenario. Harbor National Bank does not exist. A lookalike account, 40 coordinated reposts, then an official denial.",
     "quiet_day": "FICTIONAL calm session used as a control. Nothing in it should trigger a stress test.",
 }
@@ -222,6 +227,88 @@ TARIFF = [
 ]
 
 # --------------------------------------------------------------------------------------------
+# Adani-Hindenburg, 24 January - 3 February 2023 (India Standard Time = UTC+5:30; NSE opens 03:45 UTC)
+# Facts used: report published on 24 January before the next Indian session, alleging stock
+# manipulation and accounting fraud, with short positions held through US-traded bonds and
+# non-Indian-traded derivatives; Adani Enterprises' Rs 20,000 crore follow-on offer (FPO); the
+# group called the report baseless; on 25 January Adani Ports fell 6.3% and Adani Transmission
+# 8.9%; 26 January was a market holiday; on 27 January Adani Enterprises fell about 19%; a 413-page
+# response on 29 January; the FPO was fully subscribed on 31 January; on 1 February Adani
+# Enterprises fell 28% and Credit Suisse stopped taking the group's bonds as margin collateral,
+# and the FPO was called off that evening; RBI sought banks' exposure details on 2 February and
+# said on 3 February that the banking sector remained resilient and stable; S&P Dow Jones
+# Indices said on 3 February it would drop Adani Enterprises from its sustainability indices.
+# --------------------------------------------------------------------------------------------
+ADANI = [
+    news("2023-01-24T13:00:00Z", "wire-one.example",
+         "US short seller Hindenburg Research accuses Adani Group of stock manipulation and accounting fraud",
+         "Hindenburg Research said it holds short positions in Adani Group companies through US-traded bonds and non-Indian-traded derivatives after a two-year investigation. The report alleges stock manipulation and accounting fraud through offshore shell companies, days before Adani Enterprises opens a Rs 20,000 crore follow-on share sale."),
+    news("2023-01-24T13:35:00Z", "fin-daily.example",
+         "Adani Enterprises share sale in focus after short seller's fraud allegations",
+         "The short seller report questions the Adani Group's debt and governance just before the follow-on public offer by Adani Enterprises."),
+    post("2023-01-24T13:50:00Z", "did:plc:syn-ad-01", "Hindenburg just dropped a 100-page report on Adani with a short position. Tomorrow's open is going to be brutal for Adani stocks"),
+    post("2023-01-24T14:05:00Z", "did:plc:syn-ad-02", "Adani Enterprises FPO opens Friday and now a fraud report. Who subscribes after this?"),
+    news("2023-01-24T14:20:00Z", "dalal-desk.example",
+         "Adani group stocks face pressure as Hindenburg report flags offshore shell companies",
+         "Analysts said the allegations of stock manipulation could weigh on Adani Enterprises and Adani Ports when Indian markets open."),
+    post("2023-01-24T14:40:00Z", "did:plc:syn-ad-03", "Reading the Hindenburg report on the Adani group. The offshore shell company section is wild"),
+    news("2023-01-24T15:00:00Z", "street-journal.example",
+         "Short seller alleges Adani Group used offshore shell companies to manipulate stock prices",
+         "Hindenburg Research alleged that entities linked to the Adani Group manipulated share prices and raised questions about its accounting, which the group has previously denied."),
+    post("2023-01-24T15:30:00Z", "did:plc:syn-ad-04", "Banks with big Adani exposure are going to get questions tomorrow. SBI, LIC holders take note"),
+    news("2023-01-24T16:10:00Z", "markets-tv.example",
+         "Adani Group dollar bonds slide in offshore trading after short seller report",
+         "Dollar bonds of Adani Ports and other group companies fell as investors weighed the fraud allegations."),
+    post("2023-01-24T18:20:00Z", "did:plc:syn-ad-05", "Adani Ports dollar bonds already down. Equity will follow at 9:15 IST"),
+    news("2023-01-25T02:40:00Z", "wire-two.example",
+         "Adani Group calls Hindenburg report malicious and baseless, says it complies with all laws",
+         "The Adani Group rejected the short seller's allegations as baseless and said the timing of the report was meant to damage its share sale."),
+    news("2023-01-25T03:20:00Z", "dalal-desk.example",
+         "Adani stocks set to open lower as group rejects short seller allegations",
+         "Brokers expected Adani Enterprises, Adani Ports and other group shares to fall at the open."),
+    news("2023-01-25T04:05:00Z", "india-wire.example",
+         "Adani Ports and Adani Transmission fall at the open after Hindenburg report; Adani Enterprises slips",
+         "Adani group shares fell in early trade on the National Stock Exchange as investors reacted to the fraud allegations."),
+    post("2023-01-25T05:10:00Z", "did:plc:syn-ad-06", "Adani group stocks bleeding red on my screen. Sold my Adani Ports at the open"),
+    news("2023-01-25T10:20:00Z", "wire-one.example",
+         "Adani Ports closes down 6.3% and Adani Transmission 8.9% as short seller report hits the group",
+         "Adani Group stocks fell across the board. Adani Enterprises lost 1.5% ahead of its share sale."),
+    post("2023-01-26T07:30:00Z", "did:plc:syn-ad-07", "Market holiday today. Tomorrow the Adani FPO opens into this mess"),
+    news("2023-01-27T05:00:00Z", "india-wire.example",
+         "Adani Enterprises plunges as the rout deepens on the first day of its share sale",
+         "Adani Enterprises shares fell well below the offer price band as the selloff in group companies deepened."),
+    news("2023-01-27T10:20:00Z", "wire-two.example",
+         "Adani Enterprises falls about 19% in its biggest drop since 2017 as the group rout deepens",
+         "Adani group companies extended losses for a second session after the short seller's fraud allegations."),
+    post("2023-01-27T11:00:00Z", "did:plc:syn-ad-08", "Two sessions and the Adani group has lost tens of billions. This is not a normal selloff"),
+    news("2023-01-29T12:00:00Z", "wire-one.example",
+         "Adani Group publishes a 413-page rebuttal of the short seller report",
+         "The group rejected the allegations point by point and said the report was a calculated attack."),
+    news("2023-01-30T06:00:00Z", "fin-daily.example",
+         "Hindenburg says Adani's response failed to answer most of its 88 questions",
+         "The short seller said the group did not specifically answer 62 of its 88 questions."),
+    news("2023-01-31T14:00:00Z", "india-wire.example",
+         "Adani Enterprises share sale fully subscribed on the final day with institutional support",
+         "The follow-on public offer was subscribed 1.12 times, helped by late institutional demand, while retail demand stayed weak."),
+    news("2023-02-01T09:30:00Z", "wire-one.example",
+         "Adani Enterprises plunges 28% as Credit Suisse stops accepting group bonds as margin collateral",
+         "Adani Enterprises shares crashed after reports that Credit Suisse stopped accepting Adani group bonds as collateral for margin loans to private banking clients."),
+    news("2023-02-01T17:30:00Z", "wire-two.example",
+         "Adani Enterprises calls off its fully subscribed Rs 20,000 crore share sale",
+         "The board decided not to go ahead with the follow-on public offer and will return investors' money."),
+    post("2023-02-01T18:00:00Z", "did:plc:syn-ad-09", "Adani pulled the FPO. When a fully subscribed share sale is withdrawn, something is very wrong"),
+    news("2023-02-02T08:00:00Z", "dalal-desk.example",
+         "RBI asks banks for details of their exposure to the Adani group, sources say",
+         "The Reserve Bank of India sought information from lenders on their loans to the Adani group."),
+    news("2023-02-03T11:30:00Z", "central-bank.example",
+         "RBI says the Indian banking sector remains resilient and stable amid concern over exposure to a conglomerate",
+         "The Reserve Bank of India said banks are complying with its large exposure framework and that it remains vigilant."),
+    news("2023-02-03T13:00:00Z", "markets-tv.example",
+         "S&P Dow Jones Indices to drop Adani Enterprises from its sustainability indices",
+         "The index provider cited a review of media and stakeholder coverage after allegations of accounting fraud."),
+]
+
+# --------------------------------------------------------------------------------------------
 # Red team (fictional): lookalike account -> coordinated reposts -> official denial
 # --------------------------------------------------------------------------------------------
 REPOST_VARIANTS = [
@@ -286,6 +373,7 @@ PACKS = {
     "svb_2023": SVB,
     "deepseek_2025": DEEPSEEK,
     "tariff_2025": TARIFF,
+    "adani_2023": ADANI,
     "red_team": RED_TEAM,
     "quiet_day": QUIET,
 }

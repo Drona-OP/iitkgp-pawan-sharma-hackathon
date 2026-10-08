@@ -40,6 +40,10 @@ CLASS_PRIOR: dict[EventClass, float] = {
     E.MANAGEMENT_GOVERNANCE: 0.2,
     E.OTHER: -1.0,
 }
+# Subtypes the 8-K study cannot see (no 8-K item exists for them) keep the prior with this bump on
+# the logit. A short seller's fraud report is not an officer change: it is priced like a credit
+# event (the Adani group lost about $100bn in a week in January 2023). A stated assumption.
+SUBTYPE_PRIOR: dict[str, float] = {"FRAUD_ALLEGATION": 1.2}
 INTERCEPT = -3.8
 W_SENTIMENT = 1.8
 W_PUBLISHERS = 0.45   # per doubling of independent publishers
@@ -84,6 +88,7 @@ class PriorImpact:
         return (
             INTERCEPT
             + CLASS_PRIOR[f.event]
+            + SUBTYPE_PRIOR.get(f.subtype or "", 0.0)
             + W_SENTIMENT * min(1.0, abs(f.sentiment))
             + W_AUTHORITY * float(f.authoritative)
             + diffusion_logit(f)
@@ -148,7 +153,7 @@ class CalibratedImpact(PriorImpact):
 
     def score_ex(self, f: ImpactFeatures) -> tuple[int, float, bool]:
         """Classes the 8-K study never saw (macro, geopolitical, product news) keep the prior."""
-        if f.event not in self.supported:
+        if f.event not in self.supported or (f.subtype or "") in SUBTYPE_PRIOR:
             impact, p = self.prior.score(f)
             return impact, p, False
         p = self._iso(self.logit(f))

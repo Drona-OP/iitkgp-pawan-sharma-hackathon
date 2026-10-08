@@ -172,9 +172,17 @@ def get_controller() -> ReplayController:
 
 
 def packs() -> list[Path]:
-    order = ["deepseek_2025", "svb_2023", "tariff_2025", "red_team", "quiet_day", "demo_synthetic"]
+    order = ["deepseek_2025", "svb_2023", "adani_2023", "tariff_2025", "red_team", "quiet_day",
+             "svb_2023_gdelt", "adani_2023_gdelt", "control_2024_gdelt", "demo_synthetic"]
     found = sorted((settings.root / "data" / "replay").glob("*.jsonl"))
     return sorted(found, key=lambda p: (order.index(p.stem) if p.stem in order else 99, p.stem))
+
+
+def pack_label(p) -> str:
+    stem = p.stem
+    if stem.endswith("_gdelt"):
+        return stem.removesuffix("_gdelt").replace("_", " ") + " (real news, GDELT)"
+    return stem.replace("_", " ")
 
 
 def sidebar_replay() -> None:
@@ -185,7 +193,7 @@ def sidebar_replay() -> None:
         if options:
             default = settings.path("replay.default_pack")
             index = options.index(default) if default in options else 0
-            pack = st.selectbox("Scenario pack", options, index=index, format_func=lambda p: p.stem.replace("_", " "))
+            pack = st.selectbox("Scenario pack", options, index=index, format_func=pack_label)
             speed_label = st.select_slider("Clock speed", options=["60x", "600x", "3600x", "36000x", "Instant"], value="3600x")
             speed = 0.0 if speed_label == "Instant" else float(speed_label.rstrip("x"))
             left, right = st.columns(2)

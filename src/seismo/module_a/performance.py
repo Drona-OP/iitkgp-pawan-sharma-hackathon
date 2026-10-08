@@ -14,10 +14,16 @@ import pandas as pd
 
 from seismo.module_a.market import closes, opens
 
+# market -> (column whose rows define sessions, exchange time zone, open, last decision time)
+MARKETS = {
+    "US": ("SPY", "America/New_York", pd.Timedelta(hours=9, minutes=30), pd.Timedelta(hours=15, minutes=45)),
+    "IN": ("NIFTY50", "Asia/Kolkata", pd.Timedelta(hours=9, minutes=15), pd.Timedelta(hours=15, minutes=15)),
+}
 
-def _sessions(px: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp) -> pd.DatetimeIndex:
-    """US equity sessions only (rows where SPY traded; FX and futures also print on US holidays)."""
-    traded = px["SPY"].notna() if "SPY" in px.columns else px.notna().any(axis=1)
+
+def _sessions(px: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp, column: str = "SPY") -> pd.DatetimeIndex:
+    """Exchange sessions only (rows where the market's index traded; FX also prints on holidays)."""
+    traded = px[column].notna() if column in px.columns else px.notna().any(axis=1)
     return px.index[traded & (px.index >= start.normalize()) & (px.index <= end.normalize())]
 
 
@@ -27,11 +33,12 @@ def replay_performance(snapshots: list[dict], market_dir: Path, cost_bps: float 
     px_c = closes(market_dir)
     if px_c is None or not snapshots:
         return None
+    column, tz, open_t, close_t = MARKETS[snapshots[0].get("market", "US")]
     px_o = opens(market_dir) if trade_at == "open" else None
-    times = [pd.Timestamp(s["as_of"]).tz_convert("America/New_York").tz_localize(None) for s in snapshots]
+    times = [pd.Timestamp(s["as_of"]).tz_convert(tz).tz_localize(None) for s in snapshots]
     start = min(times) - pd.Timedelta(days=pad_days)
     end = max(times) + pd.Timedelta(days=pad_days)
-    days = _sessions(px_c, start, end)
+    days = _sessions(px_c, start, end, column)
     tickers = list(snapshots[0]["bench"])
     if len(days) < 2 or not set(tickers) <= set(px_c.columns):
         return None
@@ -39,8 +46,8 @@ def replay_performance(snapshots: list[dict], market_dir: Path, cost_bps: float 
     open_ = px_o.loc[px_o.index.intersection(days), tickers].reindex(days) if px_o is not None else None
 
     def effective(day: pd.Timestamp, key: str) -> tuple[dict, int]:
-        # Snapshot visible before this session's open (9:30 ET) trades at the open.
-        cutoff = day + pd.Timedelta(hours=9, minutes=30) if trade_at == "open" else day + pd.Timedelta(hours=15, minutes=45)
+        # Snapshot visible before this session's open (9:30 New York, 9:15 Mumbai) trades at the open.
+        cutoff = day + (open_t if trade_at == "open" else close_t)
         idx = max((i for i, t in enumerate(times) if t <= cutoff), default=0)
         return snapshots[idx][key], idx
 

@@ -53,3 +53,14 @@ def test_jetstream_filters(universe):
     assert "$NVDA" in kept[0].body
     assert kept[0].source_type == SourceType.SOCIAL
     assert kept[0].url.startswith("https://bsky.app/profile/")
+
+
+def test_gdelt_headlines_are_rebuilt_from_url_slugs():
+    from seismo.ingest.gdelt_replay import headline_from_url
+
+    acr = {"SVB", "FDIC"}
+    assert headline_from_url("https://www.cnbc.com/2023/03/10/silicon-valley-bank-collapse-fdic-takes-over.html", acr) == \
+        "Silicon Valley Bank Collapse FDIC Takes over"
+    assert headline_from_url("https://economictimes.indiatimes.com/markets/stocks/news/adani-group-stocks-fall-after-"
+                             "hindenburg-report/articleshow/97279870.cms") == "Adani Group Stocks Fall after Hindenburg Report"
+    assert headline_from_url("https://example.com/?p=12345") is None

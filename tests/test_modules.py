@@ -165,3 +165,34 @@ def test_deepseek_replay_cuts_nvidia_before_monday_open(universe, settings):
     before_open = [s for s in module.snapshots if s["as_of"] < monday_open]
     assert before_open[-1]["weights"]["NVDA"] < before_open[-1]["bench"]["NVDA"]
     assert module.naive_turnover > module.turnover_total, "the naive tilt churns more"
+
+
+def test_india_analog_is_local_and_spreads_through_the_group(stress_engine):
+    analog = stress_engine.analog("adani_2023")
+    assert "EQ:MKT" not in analog and "CR:HY" not in analog          # US noise dropped
+    assert analog["EQN:ADANIENT.NS"] < analog["EQ:IN"] <= 0           # the name fell far more than the market
+    r = stress_engine.run(StressRequest("adani_2023", 10, "ADANIENT.NS", "MANAGEMENT_GOVERNANCE", "FRAUD_ALLEGATION"))
+    assert "ADANIPORTS.NS" in r.downgraded                            # group contagion
+    assert "CAT" not in r.downgraded and "LT.NS" not in r.downgraded  # not sector contagion
+    assert not r.defaulted
+    assert r.cet1_ratio_after < r.cet1_ratio_before
+
+
+def test_sector_contagion_stays_in_the_country(stress_engine):
+    r = stress_engine.run(StressRequest("svb_2023", 10, "SIVB", "CREDIT_EVENT", "BANK_RUN"))
+    assert "FRC" in r.downgraded
+    assert not any(k.endswith(".NS") for k in r.downgraded)
+
+
+def test_india_caps_use_shares_times_the_close_before_the_replay(tmp_path):
+    import pandas as pd
+
+    from seismo.module_a import market as mk
+
+    pd.DataFrame({"date": ["2023-01-23", "2023-01-24", "2023-01-25"], "ADANIENT.NS": [3400.0, 3442.0, 3389.0]}).to_csv(
+        tmp_path / "prices_daily.csv", index=False)
+    (tmp_path / "shares_in.csv").write_text("ticker,shares\nADANIENT.NS,1000\n", encoding="utf-8")
+    mk._prices.cache_clear()
+    caps = mk.caps_from_shares(tmp_path, ["ADANIENT.NS"], pd.Timestamp("2023-01-25T03:00", tz="UTC"))
+    assert caps == {"ADANIENT.NS": 3442.0 * 1000}
+    mk._prices.cache_clear()

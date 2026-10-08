@@ -20,6 +20,8 @@ class Scenario:
     start: date
     end: date
     captures: str
+    epicenters: tuple[str, ...] = ()   # names whose own observed move already holds the idiosyncratic shock
+    scope: str = "global"              # "india": only Indian factors move (a local shock; US noise is dropped)
 
 
 @dataclass(frozen=True)
@@ -32,6 +34,7 @@ class ScenarioLibrary:
     ecl_weights: dict[str, float]
     default_subtypes: tuple[str, ...] = ()
     contagion_share: float = 0.34
+    group_share: float = 0.67
 
     def multiplier(self, impact: int) -> float:
         keys = sorted(self.severity_multiplier)
@@ -58,7 +61,8 @@ def _d(value: Any) -> date:
 def load_library(path: str | Path) -> ScenarioLibrary:
     raw = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
     scenarios = {
-        sid: Scenario(sid, s["label"], _d(s["start"]), _d(s["end"]), s.get("captures", ""))
+        sid: Scenario(sid, s["label"], _d(s["start"]), _d(s["end"]), s.get("captures", ""),
+                      tuple(s.get("epicenters", []) or []), str(s.get("scope", "global")))
         for sid, s in raw["scenarios"].items()
     }
     sev = raw.get("severity", {})
@@ -71,6 +75,7 @@ def load_library(path: str | Path) -> ScenarioLibrary:
         ecl_weights={k: float(v) for k, v in raw.get("ecl_weights", {"base": 0.5, "adverse": 0.3, "severe": 0.2}).items()},
         default_subtypes=tuple(raw.get("default_subtypes", [])),
         contagion_share=float(raw.get("contagion_share", 0.34)),
+        group_share=float(raw.get("group_share", 0.67)),
     )
 
 

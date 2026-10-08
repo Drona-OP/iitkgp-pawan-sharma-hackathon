@@ -127,3 +127,35 @@ def test_scenario_library_loads(settings):
     lib = load_library(str(settings.path("scenarios.path")))
     assert lib.multiplier(9) == 1.0 and lib.z(10) == -2.33
     assert lib.scenario_map().lookup(EventClass.CREDIT_EVENT, "BANK_RUN") == "svb_2023"
+
+
+def test_adani_pack_triggers_before_the_nse_open_and_the_denial_contests(universe, settings):
+    _, log, events = _run("adani_2023", universe, settings)
+    triggers = [d for d in log if d.decision == "TRIGGER" and d.entity_id == "ADANIENT.NS"]
+    assert triggers and triggers[0].as_of < datetime(2023, 1, 25, 3, 45, tzinfo=UTC)
+    assert triggers[0].scenario == "adani_2023"
+    assert triggers[0].event.subtype == "FRAUD_ALLEGATION"
+    contested = [s for s in events if "contested" in s.flags]
+    assert contested and all(s.status == "active" for s in contested)
+    assert not any(d.decision == "RETRACT" for d in log)
+
+
+def test_a_denial_retracts_an_unconfirmed_rumour_but_only_contests_a_confirmed_story(engine, make_doc):
+    rumour = make_doc(title="Harbor National Bank halts customer withdrawals, source says",
+                      publisher="fin-daily.example", published_at=T0)
+    engine.process_full(rumour)
+    deny = make_doc(title="Harbor National Bank denies halting withdrawals; reports are false",
+                    publisher="wire-one.example", published_at=T0 + timedelta(minutes=20))
+    sig = _last_event(engine, deny, "HNB")
+    assert sig.status == "retracted"
+
+    t1 = T0 + timedelta(days=3)
+    reports = [("fin-daily.example", "Short seller accuses Adani Group of accounting fraud"),
+               ("biz-times.example", "Adani Group shares under pressure after a report alleging stock manipulation"),
+               ("market-daily.example", "Hindenburg report flags offshore shell companies linked to the Adani Group")]
+    for i, (pub, title) in enumerate(reports):
+        engine.process_full(make_doc(title=title, publisher=pub, published_at=t1 + timedelta(minutes=5 * i)))
+    deny = make_doc(title="Adani Group calls the short seller's fraud report baseless",
+                    publisher="wire-two.example", published_at=t1 + timedelta(hours=2))
+    sig = _last_event(engine, deny, "ADANIENT.NS")
+    assert sig.status == "active" and "contested" in sig.flags

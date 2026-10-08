@@ -31,6 +31,32 @@ def load_caps(market_dir: Path) -> dict[str, float] | None:
     return out or None
 
 
+def caps_from_shares(market_dir: Path, tickers: list[str], as_of) -> dict[str, float] | None:
+    """Market cap on the replay date = shares outstanding (shares_in.csv) x the last close before it."""
+    import pandas as pd
+
+    path = market_dir / "shares_in.csv"
+    px = closes(market_dir)
+    if not path.exists() or px is None:
+        return None
+    shares = {}
+    with path.open(encoding="utf-8", newline="") as fh:
+        for row in csv.DictReader(fh):
+            try:
+                v = float(row["shares"])
+            except (KeyError, ValueError):
+                continue
+            if math.isfinite(v) and v > 0:
+                shares[row["ticker"]] = v
+    cutoff = pd.Timestamp(as_of).tz_localize(None).normalize() if pd.Timestamp(as_of).tzinfo else pd.Timestamp(as_of).normalize()
+    before = px[px.index < cutoff]
+    out = {}
+    for t in tickers:
+        if t in shares and t in before.columns and before[t].notna().any():
+            out[t] = shares[t] * float(before[t].dropna().iloc[-1])
+    return out or None
+
+
 @lru_cache(maxsize=4)
 def _prices(path: str):
     import pandas as pd

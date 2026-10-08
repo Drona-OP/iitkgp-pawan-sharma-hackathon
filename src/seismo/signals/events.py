@@ -118,6 +118,8 @@ class EventBuilder:
         if cluster.disputed:
             status = "retracted"
             flags.append("official_denial")
+        elif cluster.contested:
+            flags.append("contested")
 
         top = sorted(weighted, key=lambda x: (-x[0], x[1].published_at))[:3]
         evidence = [
@@ -127,7 +129,8 @@ class EventBuilder:
         ]
         latest = max(members, key=lambda m: (m.published_at, m.doc_id))
         return Signal(
-            signal_id=stable_id("sig_evt", cluster.cluster_id, latest.doc_id, status, len(cluster.disputed_by)),
+            signal_id=stable_id("sig_evt", cluster.cluster_id, latest.doc_id, status, len(cluster.disputed_by),
+                                len(cluster.contested_by)),
             grain="event",
             as_of=as_of,
             entity=entity,

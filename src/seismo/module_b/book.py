@@ -67,6 +67,8 @@ class Position:
 
     @property
     def factor(self) -> str:
+        if self.country == "IN":
+            return "EQ:IN_BANKS" if self.bank else "EQ:IN"
         if self.bank and self.obligor_id in bl.REGIONAL_BANKS:
             return "EQ:BANKS"
         return SECTOR_FACTOR.get(self.sector, "EQ:MKT")
@@ -177,7 +179,7 @@ def build_book(root: Path) -> Book:
         elif inst == "EQUITY":
             positions.append(Position(
                 pid, "Equities", "EQUITY", ob.obligor_id, ob.name, ob.sector, ob.country, ob.rating, ob.orig_rating,
-                "USD", 0.0, ob.bank, {"value": agg["notional"], "beta": 1.0},
+                agg["currency"], 0.0, ob.bank, {"value": agg["notional"], "beta": 1.0},
             ))
     return Book(positions, by_id)
 

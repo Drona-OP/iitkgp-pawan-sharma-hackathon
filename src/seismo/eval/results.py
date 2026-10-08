@@ -38,8 +38,15 @@ PACKS = {
     "svb_2023": (True, "2023-03-10T16:15:00Z", "regulators close SVB"),
     "deepseek_2025": (True, "2025-01-27T14:30:00Z", "Monday open"),
     "tariff_2025": (True, "2025-04-03T13:30:00Z", "first open after the announcement"),
+    "adani_2023": (True, "2023-01-25T03:45:00Z", "first NSE open after the report"),
     "red_team": (False, "2026-09-15T14:35:00Z", "official denial"),
     "quiet_day": (False, None, ""),
+}
+# Real-news packs from GDELT (built by `python -m seismo.ingest.gdelt_replay`); used when present.
+REAL_PACKS = {
+    "svb_2023_gdelt": (True, "2023-03-10T16:15:00Z", "regulators close SVB"),
+    "adani_2023_gdelt": (True, "2023-01-25T03:45:00Z", "first NSE open after the report"),
+    "control_2024_gdelt": (False, None, ""),
 }
 
 
@@ -64,12 +71,14 @@ def _hours(a: datetime | None, b: datetime | None) -> str:
     return f"{amount} {'before' if h >= 0 else 'after'}"
 
 
-def run_pack(name: str, settings, universe: Universe, backend, stress_engine) -> dict:
+def run_pack(name: str, settings, universe: Universe, backend, stress_engine, spec: tuple | None = None) -> dict:
     engine = Engine(universe, backend, settings)
     gate = GateConsumer(build_gate(settings))
     store = MemoryRecords()
     module_a = ModuleAConsumer.from_settings(settings, store=None)
+    module_a_in = ModuleAConsumer.from_settings(settings, store=None, market="IN")
     gate.sinks.append(module_a.on_decision)
+    gate.sinks.append(module_a_in.on_decision)
     module_b = None
     if stress_engine is not None:
         from seismo.module_b.consumer import ModuleBConsumer
@@ -94,11 +103,12 @@ def run_pack(name: str, settings, universe: Universe, backend, stress_engine) ->
                 module_b.on_signal(sig)
             gate.on_signal(sig)
             module_a.on_signal(sig)
+            module_a_in.on_signal(sig)
             if sig.grain == "event":
                 stories[sig.cluster_id] = sig
     log = gate.log
     triggers = [d for d in log if d.decision == "TRIGGER"]
-    expected, ref, ref_label = PACKS[name]
+    expected, ref, ref_label = spec or PACKS[name]
     ref_t = _ts(ref)
     first_trigger = triggers[0].as_of if triggers else None
     severe = [s for s in stories.values() if s.impact_score >= 8]
@@ -121,6 +131,8 @@ def run_pack(name: str, settings, universe: Universe, backend, stress_engine) ->
         "news_reports": news_reports,
         "social_posts": len(docs) - news_reports,
         "independent_publishers_max": max((s.corroboration.independent_publishers for s in stories.values()), default=0),
+        "publishers": len({d.publisher for d in docs}),
+        "first_trigger_headline": next((d.headline for d in triggers), None),
         "coordinated_groups": sum(s.corroboration.coordinated for s in stories.values()),
         "engine_ms": engine_ms,
         "module_a": {
@@ -128,6 +140,12 @@ def run_pack(name: str, settings, universe: Universe, backend, stress_engine) ->
             "turnover": round(module_a.turnover_total, 4),
             "naive_turnover": round(module_a.naive_turnover, 4),
             "snapshots": module_a.snapshots,
+        },
+        "module_a_in": {
+            "rebalances": max(0, len(module_a_in.snapshots) - 1),
+            "turnover": round(module_a_in.turnover_total, 4),
+            "naive_turnover": round(module_a_in.naive_turnover, 4),
+            "snapshots": module_a_in.snapshots,
         },
         "module_b": [{k: r[k] for k in ("scenario", "impact", "epicenter", "cet1_ratio_before", "cet1_ratio_after",
                                          "ecl_before", "ecl_after", "reverse_m_rbi", "pre_tax_loss")}
@@ -141,6 +159,17 @@ def run_pack(name: str, settings, universe: Universe, backend, stress_engine) ->
             out["module_a"]["nvda_before_open"] = {"weight": s["weights"]["NVDA"], "bench": s["bench"]["NVDA"],
                                                    "first_cut": first_cut["as_of"] if first_cut else None,
                                                    "lead_vs_open": _hours(_ts(first_cut["as_of"]) if first_cut else None, ref_t)}
+    if name == "adani_2023" and module_a_in.snapshots:
+        before_open = [x for x in module_a_in.snapshots if x["as_of"] < "2023-01-25T03:45"]
+        last = before_open[-1] if before_open else module_a_in.snapshots[0]
+        names = {}
+        for t in ("ADANIENT.NS", "ADANIPORTS.NS"):
+            first_cut = next((x for x in module_a_in.snapshots if x["weights"][t] < x["bench"][t] - 1e-6), None)
+            names[t] = {"weight": last["weights"][t], "bench": last["bench"][t],
+                        "first_cut": first_cut["as_of"] if first_cut else None,
+                        "lead_vs_open": _hours(_ts(first_cut["as_of"]) if first_cut else None, ref_t),
+                        "breaker": t in last.get("breaker", [])}
+        out["module_a_in"]["adani_before_open"] = names
     return out
 
 
@@ -214,6 +243,8 @@ def main() -> int:
 
         stress_engine = StressEngine.from_settings(settings)
     packs = [run_pack(name, settings, universe, backend, stress_engine) for name in PACKS]
+    real = [run_pack(name, settings, universe, backend, stress_engine, spec)
+            for name, spec in REAL_PACKS.items() if (settings.root / "data" / "replay" / f"{name}.jsonl").exists()]
     all_ms = [m for p in packs for m in p["engine_ms"]]
     probe = Engine(universe, backend, settings)
     impact_name = probe.impact.name
@@ -243,15 +274,20 @@ def main() -> int:
         "Max independent publishers": p["independent_publishers_max"],
         "Coordinated groups": p["coordinated_groups"],
     } for p in packs]
-    perf = None
-    ds = next(p for p in packs if p["pack"] == "deepseek_2025")
-    try:
-        from seismo.module_a.performance import replay_performance, summary
+    def performance(pack: str, key: str) -> dict | None:
+        p = next((x for x in packs if x["pack"] == pack), None)
+        if p is None or not p[key]["snapshots"]:
+            return None
+        try:
+            from seismo.module_a.performance import replay_performance, summary
 
-        paths = replay_performance(ds["module_a"]["snapshots"], settings.root / "data" / "market")
-        perf = summary(paths) if paths is not None else None
-    except Exception:  # noqa: BLE001
-        perf = None
+            paths = replay_performance(p[key]["snapshots"], settings.root / "data" / "market")
+            return summary(paths) if paths is not None else None
+        except Exception:  # noqa: BLE001
+            return None
+
+    perf = performance("deepseek_2025", "module_a")
+    perf_in = performance("adani_2023", "module_a_in")
     out = {
         "generated_at": datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"),
         "sentiment_backend": backend.name,
@@ -261,8 +297,23 @@ def main() -> int:
         "gold": gold_metrics(settings, universe, backend),
         "latency": latency,
         "module_a": {p["pack"]: {k: v for k, v in p["module_a"].items() if k != "snapshots"} for p in packs},
+        "module_a_in": {p["pack"]: {k: v for k, v in p["module_a_in"].items() if k != "snapshots"} for p in packs
+                        if p["module_a_in"]["snapshots"]},
         "module_a_deepseek_performance": perf,
+        "module_a_adani_performance": perf_in,
         "module_b": {p["pack"]: p["module_b"] for p in packs},
+        "real_news": [{
+            "Window": p["pack"].replace("_gdelt", "").replace("_", " "),
+            "Real articles": p["documents"],
+            "Publishers": p["publishers"],
+            "Stories (events)": p["stories"],
+            "Naive stress tests": p["naive_fires"],
+            "Seismo auto-triggers": p["seismo_triggers"],
+            "Held for review": p["reviews"],
+            "First trigger vs reference": f"{p['trigger_vs_reference']} ({p['reference']})" if p["expected_trigger"] else "-",
+            "Correct": "yes" if p["correct"] else "NO",
+        } for p in real],
+        "real_news_first_triggers": {p["pack"]: {"at": p["first_trigger"], "headline": p["first_trigger_headline"]} for p in real},
         "stress_inputs": "data/market/analog_shocks.csv" if stress_engine else None,
     }
     results = settings.root / "docs" / "results"
@@ -288,6 +339,12 @@ def to_markdown(out: dict) -> str:
         f"Sentiment backend `{out['sentiment_backend']}`, impact model `{out['impact_model']}`. Regenerate with `make results`.",
         "## Replay scorecard: gated vs naive trigger", _table(out["scorecard"]),
         "## Dedup and corroboration", _table(out["dedup"]),
+        "## Real news (GDELT): the same engine on real article URLs, publishers and timestamps" if out.get("real_news") else "",
+        _table(out.get("real_news", [])),
+        ("Headlines are rebuilt from URL slugs; timestamps are GDELT's 15-minute ingestion slots, which can trail "
+         "publication by 15-30 minutes. First triggers: " + "; ".join(
+             f"{k.replace('_gdelt', '')} at {v['at']} on \"{v['headline']}\"" for k, v in out.get("real_news_first_triggers", {}).items() if v["at"])
+         + ".") if out.get("real_news") else "",
         "## Gold set", _table(out["gold"]["table"]), out["gold"]["note"],
         "## Latency (CPU)", _table([out["latency"]]),
     ]
@@ -300,6 +357,16 @@ def to_markdown(out: dict) -> str:
     if out.get("module_a_deepseek_performance"):
         parts += [_table([{"Portfolio": k, "Return": f"{v['return']:+.2%}", "Max drawdown": f"{v['max_drawdown']:.2%}"}
                           for k, v in out["module_a_deepseek_performance"].items()])]
+    mi = out.get("module_a_in", {}).get("adani_2023", {})
+    if mi.get("adani_before_open"):
+        rows = [{"Name": t.replace(".NS", ""), "Benchmark": f"{v['bench']:.2%}", "Weight before the 25 Jan open": f"{v['weight']:.2%}",
+                 "First cut": f"{v['first_cut'] or '-'} ({v['lead_vs_open']} the open)", "Circuit breaker": "yes" if v["breaker"] else "no"}
+                for t, v in mi["adani_before_open"].items()]
+        parts += ["## Module A, India index (Adani-Hindenburg replay)", _table(rows),
+                  f"Turnover {mi['turnover']:.1%} vs naive tilt {mi['naive_turnover']:.1%}."]
+    if out.get("module_a_adani_performance"):
+        parts += [_table([{"Portfolio": k, "Return": f"{v['return']:+.2%}", "Max drawdown": f"{v['max_drawdown']:.2%}"}
+                          for k, v in out["module_a_adani_performance"].items()])]
     mb = [{"Pack": k, **r} for k, rs in out["module_b"].items() for r in rs[:1]]
     if mb:
         parts += ["## Module B (most severe auto-triggered stress run per pack)", _table([{

@@ -144,7 +144,8 @@ class Engine:
                 flags.append("official_denial")
                 target = self.clusters.best_match(mention.entity_id, doc)
                 if target is not None:
-                    self.clusters.dispute(target, doc)
+                    if self.clusters.dispute(target, doc) == "contested":
+                        flags.append("denial_contested")
                     touched[target.cluster_id] = target
                     cluster_id = target.cluster_id
             else:

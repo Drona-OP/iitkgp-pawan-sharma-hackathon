@@ -88,6 +88,7 @@ RULES: tuple[Rule, ...] = (
     _r(E.OPERATIONAL_ESG, "ENVIRONMENTAL", 2.0, r"\boil spill\b|\bemissions\b|\bpollution\b"),
     _r(E.MANAGEMENT_GOVERNANCE, "EXECUTIVE_CHANGE", 2.5, r"\b(?:CEO|CFO|chief executive|chairman)\b.{0,40}\b(?:steps? down|resign\w*|ousted|replaced|retire\w*|appointed|named)\b|\b(?:steps? down|resign\w*|appoint\w*|names?|named)\b.{0,40}\b(?:CEO|CFO|chief executive)\b"),
     _r(E.MANAGEMENT_GOVERNANCE, "ACCOUNTING", 2.5, r"\baccounting (?:irregularit\w*|probe|issues?)\b|\bauditor\b|\brestate\w*"),
+    _r(E.MANAGEMENT_GOVERNANCE, "FRAUD_ALLEGATION", 3.0, r"\b(?:accounting |corporate )?fraud\b|\bfraudulent\b|\bstock manipulation\b|\bmanipulat(?:e|es|ed|ing|ion)\b.{0,30}\b(?:shares?|stocks?|prices?)\b|\bshort[- ]sell(?:er|ers|ing)?\b.{0,60}\b(?:report|allegations?|claims?|attack)\b|\b(?:largest|biggest) con\b|\bshell compan(?:y|ies)\b|\boffshore (?:shell|entities|funds)\b"),
 )
 
 

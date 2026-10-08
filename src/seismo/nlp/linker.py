@@ -16,7 +16,7 @@ from seismo.universe import Entity, Universe
 
 CASHTAG_RE = re.compile(r"(?<![\w$])\$([A-Za-z]{1,5})\b")
 EXCHANGE_TICKER_RE = re.compile(
-    r"\((?:NASDAQ|Nasdaq|NYSE|NYSE American|NSE|BSE)\s*:\s*([A-Z][A-Z.]{0,5})\)"
+    r"\((?:NASDAQ|Nasdaq|NYSE|NYSE American|NSE|BSE)\s*:\s*([A-Z][A-Z.&]{0,11})\)"
 )
 WORD_RE = re.compile(r"[a-z][a-z'\-]*")
 
@@ -122,9 +122,23 @@ class EntityLinker:
             rel = 20 + (45 if in_title else 0) + 20 * (1 - first_pos) + 5 * min(count, 3)
         return int(max(0, min(100, round(rel))))
 
+    @staticmethod
+    def _drop_nested(hits: list[_Hit]) -> list[_Hit]:
+        """Across entities, the longest name wins: "Adani" inside "Adani Ports" is Adani Ports."""
+        names = [h for h in hits if h.kind in ("alias", "ambiguous")]
+        keep = []
+        for h in hits:
+            if h.kind in ("alias", "ambiguous") and any(
+                o.entity is not h.entity and o.start <= h.start and h.end <= o.end and (o.end - o.start) > (h.end - h.start)
+                for o in names
+            ):
+                continue
+            keep.append(h)
+        return keep
+
     def link(self, doc: Document) -> list[EntityMention]:
         text = doc.text
-        hits = self._find_hits(doc, text)
+        hits = self._drop_nested(self._find_hits(doc, text))
         if not hits:
             return []
         grouped: dict[str, list[_Hit]] = defaultdict(list)

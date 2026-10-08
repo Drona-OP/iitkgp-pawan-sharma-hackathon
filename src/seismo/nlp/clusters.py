@@ -11,7 +11,11 @@ Seismo scores events, not posts. Every (entity, document) pair joins an event cl
 - near-duplicates (MinHash similarity >= 0.8) are syndicated copies and inherit the original
   publisher, so a wire story re-run by ten sites is still one voice;
 - five or more accounts posting near-identical text within an hour form a coordinated group,
-  which counts as a single voice and is flagged.
+  which counts as a single voice and is flagged;
+- a denial retracts a story only while the story is unconfirmed. Once three independent
+  newsrooms (or one authoritative source) carry it, a denial makes it *contested*: kept live and
+  flagged, because a rumour dies when it is denied but a confirmed story does not (the Adani
+  group called the Hindenburg report baseless within hours; its shares then halved).
 """
 
 from __future__ import annotations
@@ -32,6 +36,7 @@ SOCIAL_ATTACH_HOURS = 6.0
 COORD_SIM = 0.7
 COORD_MIN_AUTHORS = 5
 COORD_WINDOW = timedelta(minutes=60)
+CONTEST_MIN_PUBLISHERS = 3   # independent newsrooms after which a denial contests, not retracts
 
 
 @dataclass
@@ -84,6 +89,14 @@ class Cluster:
     disputed: bool = False
     disputed_by: list[str] = field(default_factory=list)
     disputed_at: datetime | None = None
+    contested: bool = False
+    contested_by: list[str] = field(default_factory=list)
+
+    def corroborated(self) -> bool:
+        """Confirmed by >= 3 independent newsrooms or one authoritative source (no social, no lookalikes)."""
+        keys = {m.key for m in self.members if m.source_type != SourceType.SOCIAL and not m.lookalike}
+        authoritative = any(m.authoritative and not m.lookalike for m in self.members)
+        return len(keys) >= CONTEST_MIN_PUBLISHERS or authoritative
 
     def classes(self) -> set[EventClass]:
         return {m.event for m in self.members}
@@ -198,11 +211,18 @@ class StoryClusterer:
                 return
         cluster.groups.append(SocialGroup(member.sig, member.published_at, {author}, [member.doc_id]))
 
-    def dispute(self, cluster: Cluster, doc: Document) -> None:
+    def dispute(self, cluster: Cluster, doc: Document) -> str:
+        """Apply a denial: "retracted" for an unconfirmed story, "contested" for a confirmed one."""
+        if cluster.corroborated() and not cluster.disputed:
+            cluster.contested = True
+            if doc.doc_id not in cluster.contested_by:
+                cluster.contested_by.append(doc.doc_id)
+            return "contested"
         cluster.disputed = True
         cluster.disputed_at = doc.published_at
         if doc.doc_id not in cluster.disputed_by:
             cluster.disputed_by.append(doc.doc_id)
+        return "retracted"
 
     def best_match(
         self, entity_id: str, doc: Document, horizon_hours: float = 48.0

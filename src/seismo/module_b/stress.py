@@ -4,10 +4,13 @@ Pipeline for one run:
   1. Shock vector = the matching historical analog x severity(impact) x m (m = 1 normally; the
      reverse stress test and the dashboard slider move it).
   2. Idiosyncratic overlay: the obligor at the centre is downgraded (and defaults for bank runs
-     and bankruptcies at high impact); same-sector peers take contagion notches.
+     and bankruptcies at high impact); same-sector peers take contagion notches, or, for a
+     governance shock, the other companies of the same business group do (group contagion, as in
+     rating agencies' group notching).
   3. Revaluation: bonds by duration-convexity on rate + spread moves, swaps by DV01, CDS by CS01
      (with jump-to-default), FX forwards by notional x FX return, options by delta-gamma-vega,
-     equities by beta x sector return plus the idiosyncratic shock.
+     equities by beta x sector return plus the idiosyncratic shock; an NSE stake by its own
+     observed move in the analog window when the data has it; INR assets also carry USD/INR.
   4. Credit: Vasicek stressed PDs at systematic factor Z = Z(impact) x s x m, where the systemic
      intensity s = clip(max(|S&P 500 move| / 20%, |HY spread move| / 400bp), 0.1, 1) is read
      off the analog itself (a sector shock like DeepSeek barely moves the credit cycle; Lehman
@@ -44,6 +47,7 @@ CET1_START_RATIO = 0.13
 BASEL_FLOOR = 0.07
 RBI_FLOOR = 0.08
 ASSET_CLASSES = ["Loans", "Bonds", "Derivatives", "Equities"]
+INDIA_FACTORS = {"EQ:IN", "EQ:IN_BANKS", "FX:USDINR", "IR:IN10Y"}
 
 
 @dataclass(frozen=True)
@@ -131,11 +135,19 @@ class StressEngine:
         notches = int(round(cfg.get("notches", 1) * m))
         epi = self.book.obligors[req.epicenter]
         out = {epi.obligor_id: notches}
-        contagion = int(round(notches * self.lib.contagion_share))
-        if contagion:
-            for o in self.book.obligors.values():
-                if o.obligor_id != epi.obligor_id and o.sector == epi.sector and o.bank == epi.bank:
-                    out[o.obligor_id] = contagion
+        if cfg.get("contagion", "sector") == "group":
+            group_notches = int(round(notches * self.lib.group_share))
+            if epi.group and group_notches:
+                for o in self.book.obligors.values():
+                    if o.obligor_id != epi.obligor_id and o.group == epi.group:
+                        out[o.obligor_id] = group_notches
+        else:
+            contagion = int(round(notches * self.lib.contagion_share))
+            if contagion:
+                for o in self.book.obligors.values():
+                    if (o.obligor_id != epi.obligor_id and o.sector == epi.sector and o.bank == epi.bank
+                            and o.country == epi.country):
+                        out[o.obligor_id] = contagion
         defaulted = set()
         if (
             req.subtype in self.lib.default_subtypes
@@ -143,6 +155,9 @@ class StressEngine:
             and m >= 0.5
         ):
             defaulted.add(epi.obligor_id)
+        observed = self.lib.scenarios.get(req.scenario)
+        if observed is not None and epi.obligor_id in observed.epicenters:
+            return out, defaulted, 0.0   # the analog's own move of this name already holds the shock
         return out, defaulted, float(cfg.get("equity_shock", 0.0)) * m
 
     # ------------------------------------------------------------------ market revaluation
@@ -153,7 +168,7 @@ class StressEngine:
             if p.obligor_id in defaulted:
                 loss = _value(p) - p.d["face"] * (1 - p.d["lgd"])
                 return -loss, "default: marked to recovery"
-            dy_bp = 0.0 if p.currency == "INR" else rate_at(shock, p.years)
+            dy_bp = shock.get("IR:IN10Y", 0.0) if p.currency == "INR" else rate_at(shock, p.years)
             if not p.d["sovereign"]:
                 dy_bp += spread_shock(shock, p.rating) + spread_per_notch * notches.get(p.obligor_id, 0)
             dy = dy_bp / 10_000
@@ -185,12 +200,17 @@ class StressEngine:
                 return pnl, f"underlying {ret:+.1%}, vol {dvol * 100:+.0f}pt"
             return 0.0, ""
         if p.asset_class == "Equities":
-            ret = shock.get(p.factor, shock.get("EQ:MKT", 0.0)) * p.d["beta"]
+            own = shock.get(f"EQN:{p.obligor_id}")
+            ret = own if own is not None else shock.get(p.factor, shock.get("EQ:MKT", 0.0)) * p.d["beta"]
             if p.obligor_id in defaulted:
                 ret = -0.95
             elif p.obligor_id == epicenter:
                 ret = (1 + ret) * (1 + equity_idio) - 1
-            return p.d["value"] * max(-1.0, ret), f"{ret:+.1%}"
+            ret = max(-1.0, ret)
+            pnl = p.d["value"] * ret
+            if p.currency == "INR":
+                pnl = p.d["value"] * ((1 + ret) / (1 + fx_inr) - 1)
+            return pnl, f"{ret:+.1%}" + (" (own move)" if own is not None else "")
         return 0.0, ""
 
     # ------------------------------------------------------------------ credit
@@ -209,14 +229,15 @@ class StressEngine:
 
     # ------------------------------------------------------------------ one run
     def systemic(self, scenario: str) -> float:
-        base = self.shocks.get(scenario, {})
-        s = max(abs(base.get("EQ:MKT", 0.0)) / 0.20, abs(base.get("CR:HY", 0.0)) / 400.0)
+        base = self.analog(scenario)
+        s = max(abs(base.get("EQ:MKT", 0.0)) / 0.20, abs(base.get("CR:HY", 0.0)) / 400.0,
+                abs(base.get("EQ:IN", 0.0)) / 0.20)
         return round(min(1.0, max(0.1, s)), 3)
 
     @staticmethod
     def _cap(factor: str, value: float) -> float:
         """Keep scaled shocks physical: prices cannot fall below -95%, yields not below zero."""
-        if factor.startswith(("EQ:", "FX:", "CM:")):
+        if factor.startswith(("EQ:", "EQN:", "FX:", "CM:")):
             return max(-0.95, value)
         if factor.startswith("IR:"):
             tenor = {"IR:3M": 0.25, "IR:2Y": 2, "IR:5Y": 5, "IR:10Y": 10, "IR:30Y": 30}.get(factor, 10)
@@ -227,8 +248,16 @@ class StressEngine:
             return max(-10.0, value)
         return value
 
+    def analog(self, scenario: str) -> dict[str, float]:
+        """The analog's shock vector; a local (India-scope) analog keeps only Indian factors."""
+        base = self.shocks.get(scenario, {})
+        sc = self.lib.scenarios.get(scenario)
+        if sc is not None and sc.scope == "india":
+            base = {k: v for k, v in base.items() if k in INDIA_FACTORS or k.startswith("EQN:")}
+        return base
+
     def _core(self, req: StressRequest, m: float) -> dict:
-        base = self.shocks.get(req.scenario, {})
+        base = self.analog(req.scenario)
         mult = self.lib.multiplier(req.impact) * m
         shock = {k: self._cap(k, v * mult) for k, v in base.items()}
         z = self.lib.z(req.impact) * self.systemic(req.scenario) * m

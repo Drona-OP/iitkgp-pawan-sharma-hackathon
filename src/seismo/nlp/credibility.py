@@ -29,7 +29,7 @@ SYNTHETIC_CREDIBILITY: dict[str, float] = {
     "central-bank.example": 1.0, "street-journal.example": 0.9,
     "street-journal-markets.example": 0.85, "biz-times.example": 0.85, "markets-tv.example": 0.85,
     "fin-daily.example": 0.8, "market-daily.example": 0.8, "tech-ledger.example": 0.75,
-    "money-post.example": 0.75,
+    "money-post.example": 0.75, "india-wire.example": 0.9, "dalal-desk.example": 0.8,
 }
 DOMAIN_CREDIBILITY.update(SYNTHETIC_CREDIBILITY)
 
