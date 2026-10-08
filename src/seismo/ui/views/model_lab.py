@@ -30,8 +30,19 @@ def render() -> None:
     sc = pd.DataFrame(res["scorecard"])
     st.dataframe(sc, hide_index=True, width="stretch")
 
+    if res.get("real_news"):
+        st.markdown("### Real news (GDELT): real article URLs, publishers and timestamps")
+        st.dataframe(pd.DataFrame(res["real_news"]), hide_index=True, width="stretch")
+        st.caption("Headlines rebuilt from URL slugs; timestamps are GDELT's 15-minute ingestion slots.")
+
     st.markdown("### Corroboration and dedup: reports vs independent voices")
     st.dataframe(pd.DataFrame(res["dedup"]), hide_index=True, width="stretch")
+
+    sb = res.get("sentiment_benchmark")
+    if sb:
+        st.markdown("### Target sentiment on real labelled headlines (SEntFiN 1.0, held-out test)")
+        st.dataframe(pd.DataFrame(sb["table"]), hide_index=True, width="stretch")
+        st.caption(sb["note"])
     st.markdown("### Gold set: entity linking, target sentiment, event class")
     gold = res.get("gold")
     if gold:

@@ -16,28 +16,28 @@ h1{font-size:30px;margin:0 0 4px;font-weight:600}.sub{color:#8A9BB0;margin:0 0 2
 <h1>Seismo: one signal bus feeds a tactical and a strategic consumer</h1>
 <p class="sub">Replay packs and live sources share every downstream step. Default run is offline and deterministic; live mode is opt-in.</p>
 <div class="row">
-<div class="box"><b>GDELT news</b><span>DOC 2.0 API, 15-min, keyless</span></div>
+<div class="box"><b>GDELT news</b><span>live DOC API + historical event exports (real URLs)</span></div>
 <div class="box"><b>SEC EDGAR 8-K</b><span>item codes as authoritative labels</span></div>
 <div class="box"><b>Bluesky Jetstream</b><span>real-time posts, cashtags, author caps</span></div>
-<div class="box"><b>Replay packs</b><span>SVB, DeepSeek, tariff, red team, quiet day (JSONL)</span></div>
+<div class="box"><b>Replay packs</b><span>SVB, DeepSeek, tariff, Adani, red team, quiet day + 3 real-news GDELT packs</span></div>
 </div>
 <div class="arrow">&#8595; normalize: one Document schema, UTC timestamps, content-hash ids, live or replay clock</div>
 <div class="engine"><div class="title"><b>AI/NLP Risk Engine</b><span>CPU-only, deterministic in replay, ~1 ms per document</span></div>
 <div class="row">
 <div class="box"><b><span class="num">1</span> Event classifier</b><span>8-K items + weighted rules, 10 classes, subtype, confidence</span></div>
 <div class="box"><b><span class="num">2</span> Entity linking</b><span>aliases, cashtags, CIK; context check for "Apple", "Meta"; relevance 0-100</span></div>
-<div class="box"><b><span class="num">3</span> Entity sentiment</b><span>clause-level window per entity; FinBERT or finance lexicon; -1..+1, confidence</span></div>
+<div class="box"><b><span class="num">3</span> Entity sentiment</b><span>target-masked model trained on 14k SEntFiN entity labels (lexicon fallback); -1..+1</span></div>
 </div><div class="row">
 <div class="box"><b><span class="num">4</span> Credibility</b><span>by domain and owner, never by badge; lookalike domains flagged</span></div>
-<div class="box"><b><span class="num">5</span> Event clusters</b><span>MinHash syndication, 24h novelty chains, coordinated-repost groups, denials &rarr; retraction</span></div>
+<div class="box"><b><span class="num">5</span> Event clusters</b><span>MinHash syndication, 24h novelty chains, coordinated reposts; a denial retracts a rumour, contests a confirmed story</span></div>
 <div class="box"><b><span class="num">6</span> Impact 1-10</b><span>8-K event study: P(|SCAR| &gt; 2), isotonic-calibrated; "how big if true"</span></div>
 </div></div>
 <div class="arrow">&#8595;</div>
 <div class="bus"><b>Signal bus &middot; schema v1.1</b><br><span>document, event and entity grains &middot; evidence spans are exact substrings &middot; SQLite store &middot; FastAPI REST + WebSocket &middot; JSON Schema</span></div>
 <div class="row" style="margin-top:12px">
-<div class="box mod"><b>Module A &middot; tactical rebalancer</b><span>20 S&amp;P 100 names, 11 sectors &middot; S&amp;P DJI-style filters &middot; decayed, shrunk z-scores &middot; inverse-vol tilt on capped cap weights &middot; 15% name / 5% active caps &middot; circuit breaker &middot; 2% no-trade band &middot; 5 bp costs</span></div>
+<div class="box mod"><b>Module A &middot; tactical rebalancer</b><span>US index (20 S&amp;P 100) or India index (16 Nifty 50) &middot; S&amp;P DJI-style filters &middot; decayed, shrunk z-scores &middot; inverse-vol tilt on capped cap weights &middot; 15% name / 5% active caps &middot; circuit breaker &middot; 2% no-trade band &middot; 5 bp costs</span></div>
 <div class="box gate"><b>Trigger gate</b><span>impact &ge; 8 &middot; analog exists &middot; confidence &ge; 0.7 &middot; &ge; 3 independent publishers in 60 min or 1 authoritative &middot; not disputed &rarr; TRIGGER / REVIEW / RETRACT</span></div>
-<div class="box mod"><b>Module B &middot; strategic stress test</b><span>trade blotter &rarr; wholesale book &middot; historical-analog factor shocks &middot; bonds, swaps, CDS, FX, options &middot; Vasicek PD, migration, ECL staging &middot; CET1 vs Basel 7% / RBI 8% &middot; reverse stress &middot; memo</span></div>
+<div class="box mod"><b>Module B &middot; strategic stress test</b><span>trade blotter &rarr; US + India wholesale book &middot; analog shocks from data, group contagion &middot; bonds, swaps, CDS, FX, options &middot; Vasicek PD, migration, ECL staging &middot; CET1 vs Basel 7% / RBI 8% &middot; reverse stress &middot; memo</span></div>
 </div>
 <div class="arrow">&#8595;</div>
 <div class="row"><div class="box" style="text-align:center"><b>Dashboard (Streamlit)</b><span>Risk Radar &middot; Module A &middot; Module B &middot; Model Lab &middot; Try It (type a headline, run the red team)</span></div></div>
