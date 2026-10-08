@@ -42,8 +42,9 @@ impact:             ## 8-K event study -> models/impact_calibrated.json
 packs:              ## rebuild the five replay packs
 	$(PY) scripts/build_replay_packs.py
 
-results:            ## regenerate every number in the deck -> docs/results/
+results:            ## regenerate every number in the deck -> docs/results/ (+ manifest)
 	$(PY) -m seismo.eval.results
+	$(PY) -m seismo.eval.manifest
 
 test:
 	$(PY) -m pytest

@@ -6,69 +6,78 @@
 **Demo Video Link:** [YouTube, unlisted - added before submission]
 **Slide Deck Link (if hosted externally):** not hosted externally; see [`docs/presentation.pdf`](docs/presentation.pdf)
 
-> Build status: Day 1 of 7. The end-to-end pipeline runs on baseline models; later days replace
-> them with the fine-tuned sentiment model, the event-study impact model and both downstream modules.
-
-![Risk Radar](docs/img/risk-radar-day1.png)
+![Seismo architecture](docs/architecture.png)
 
 ## 1. Project Overview / Problem Statement & Approach
 
 News now moves risk faster than risk systems can read it. Silicon Valley Bank lost $42 billion of
-deposits in a single day in March 2023, in a run that spread on social media, and in January 2025
-Nvidia lost about $589 billion of market value in one session after news of a cheaper rival AI
-model spread over a weekend. Risk teams need machine-readable signals within minutes: which entity
-is affected, how negative the news is, what kind of event it is, and how severe it is likely to be.
+deposits in one day in March 2023 in a run that spread through group chats and social media; in
+January 2025 Nvidia lost about $589 billion of market value in a session after a weekend of
+coverage of a cheaper rival AI model. A risk desk needs a machine-readable answer within minutes:
+which entity, how negative, what kind of event, how severe, and **is it real**.
 
 Seismo measures the magnitude of market-moving news the way a seismograph measures a tremor. It
-ingests financial news (GDELT), regulatory filings (SEC EDGAR 8-K) and social posts (Bluesky),
-links each document to the companies and macro factors it mentions, and emits a structured signal
-per entity: sentiment from -1 to +1, an event class, an impact score from 1 to 10, plus novelty,
-relevance, corroboration and the exact evidence text behind every score.
+ingests news (GDELT), regulatory filings (SEC EDGAR 8-K) and social posts (Bluesky), links each
+document to the companies and macro factors it mentions, and emits one evolving signal per
+*event*, not per post: entity-level sentiment (-1 to +1), event class, impact (1-10), novelty,
+relevance, corroboration by independent publishers, and the exact evidence text behind every
+score. It copies what commercial news-analytics desks do (RavenPack-style relevance and novelty,
+Kensho-NERD-style linking), and proves itself on replays of events whose outcome is known.
 
-Signals flow over one bus to two consumers with different horizons: a tactical index rebalancer
-(Module A) and a strategic stress test of a wholesale banking book (Module B). Every run can be
-replayed deterministically from recorded data, so the demo and the results need no API keys.
+Both downstream modules consume the same signal bus. **Module A** is the tactical consumer: a
+risk overlay that tilts a 20-stock S&P 100 index on filtered sentiment, inside name, active and
+sector caps, with a circuit breaker. **Module B** is the strategic consumer: a corroborated,
+high-impact event triggers a stress test of a synthetic wholesale banking book in a bank's own
+language: historical-analog factor shocks, Vasicek PDs, rating migration, IFRS 9 / RBI ECL staging,
+CET1 against Basel and RBI floors, and a reverse stress test. A five-check **trigger gate** sits in
+between, so one viral fake cannot launch a stress test.
 
 ## 2. Architecture & Tech Stack
 
-```text
-GDELT news ─┐
-SEC 8-K ────┼─> adapters ─> bus: docs.raw ─> engine ─────────────────> bus: signals.v1 ─┬─> SQLite store ─> FastAPI (REST, WebSocket)
-Bluesky ────┤   (normalize)                  link entities                               ├─> entity aggregator (decayed index)
-Replay pack ┘                                classify event                              ├─> Module A (Day 5)
-                                             entity-window sentiment                     └─> Module B (Day 4)
-                                             credibility, novelty, impact
-                                                                                            Streamlit Risk Radar reads the store
-```
+The diagram above is the data flow (source: [`docs/src/architecture.html`](docs/src/architecture.html)).
 
 | Layer | Technology | Why |
 | --- | --- | --- |
-| Contracts | Pydantic v2, exported JSON Schema ([`docs/signal_schema.json`](docs/signal_schema.json)) | Every message is typed and validated |
-| Bus | In-memory asyncio bus behind a Kafka-shaped interface (Redpanda planned) | Same code in a laptop demo and a streaming deployment |
-| Engine | Regex and alias entity linking with context disambiguation, FinBERT (lexicon fallback), 8-K item codes plus keyword event rules | Transparent baselines that later models must beat |
-| Store | SQLite in WAL mode | The dashboard reads while the pipeline writes |
-| API | FastAPI: `/v1/signals`, `/v1/entities`, `/v1/analyze`, WebSocket `/v1/stream`, OpenAPI at `/docs` | Typed service with free documentation |
-| Dashboard | Streamlit and Plotly | Live view of signals, severity and evidence |
-| Quality | pytest (42 tests incl. a deterministic replay test), ruff, GitHub Actions | Reproducible and reviewable |
+| Contracts | Pydantic v2; JSON Schema in [`docs/signal_schema.json`](docs/signal_schema.json) (v1.1) | Every message typed and validated; evidence spans must be exact substrings of the source |
+| Bus | In-memory asyncio bus behind a Kafka-shaped interface, keyed by entity | Per-entity ordering; same code for the laptop demo and a streaming deployment |
+| Engine | Regex/alias entity linker with context disambiguation; clause-level entity sentiment (FinBERT or a finance lexicon); 8-K items + weighted event rules; MinHash event clustering; owner-aware corroboration; lookalike and coordination detection; denial-driven retractions | Transparent, CPU-only, ~1 ms per document, deterministic in replay |
+| Impact | 8-K event study (market model, SCAR, logistic + isotonic, time split) with a documented logit prior for classes 8-Ks cannot see | Impact means a calibrated chance of a two-sigma move, not an LLM's guess |
+| Module A | Filtered, decayed, shrunk z-scores; inverse-vol tilt on capped cap weights; caps, breaker, no-trade band; replay P&L with costs | S&P DJI sentiment-index rules, made event-driven |
+| Module B | Seeded trade blotter -> 225 positions; duration-convexity, DV01, CS01, delta-gamma-vega; Vasicek/Basel IRB PD; ECL staging; RWA; CET1; reverse stress by bisection | The language of a credit-risk and capital team |
+| Store / API | SQLite (WAL); FastAPI REST + WebSocket, OpenAPI at `/docs` | Dashboard reads while the pipeline writes |
+| Dashboard | Streamlit + Plotly, five pages | Risk Radar, Module A, Module B, Model Lab, Try It |
+| Quality | pytest (70+ tests incl. finance maths, replay golden behaviour, API), ruff, GitHub Actions | Reviewable and reproducible |
+
+Repository layout: `src/seismo/` (`ingest/`, `nlp/`, `signals/`, `module_a/`, `module_b/`, `eval/`,
+`bus/`, `store/`, `api/`, `ui/`), `data/` (universe, replay packs, gold set, blotter, market data,
+`MANIFEST.yaml`), `config/` (thresholds, scenario library), `docs/` (deck, architecture, results,
+model and data cards), `scripts/` (data download, pack builder), `tests/`.
 
 ## 3. Dataset Used
 
 | Data | Source | Notes |
 | --- | --- | --- |
-| Company universe | 20 S&P 100 names across all 11 GICS sectors; CIKs from SEC `company_tickers.json` | `python scripts/refresh_universe.py` verifies every CIK against SEC |
-| Live news | [GDELT DOC 2.0 API](https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/) | Free and keyless; updates every 15 minutes |
-| Live filings | [SEC EDGAR current 8-K feed](https://www.sec.gov/os/accessing-edgar-data) | Free; SEC requires a descriptive User-Agent and at most 10 requests per second |
-| Live social posts | [Bluesky Jetstream](https://atproto.com/guides/streaming-data) | Free and keyless; X has no free read access |
-| Demo replay pack | `data/replay/demo_synthetic.jsonl` | 35 invented documents, every one flagged `"synthetic": true`; none is real news |
+| Universe | 20 S&P 100 names across all 11 GICS sectors; CIKs from SEC `company_tickers.json` | `python scripts/refresh_universe.py` checks every CIK |
+| Live news / filings / social | [GDELT DOC 2.0](https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/), [SEC EDGAR](https://www.sec.gov/os/accessing-edgar-data), [Bluesky Jetstream](https://atproto.com/guides/streaming-data) | Free and keyless. X has no free read access; NewsAPI's free tier delays articles 24 hours, so it would not be "real time" |
+| Replay packs | `data/replay/*.jsonl`, built by `scripts/build_replay_packs.py` | SVB, DeepSeek and the tariff shock are **synthetic reconstructions**: paraphrased headlines timed to the public record, `.example` stand-in publishers (no real outlet is quoted with invented words), invented social posts. The red team ("Harbor National Bank") and the quiet day are fictional. Every record is flagged `"synthetic": true` |
+| Market data | Yahoo Finance (yfinance), FRED, SEC EDGAR submissions API via `make data` | Prices, Treasury curve, credit spreads, VIX, FX, oil; 8-K history for the event study |
+| Wholesale book | `data/blotter/` from `python -m seismo blotter` (seed 2026) | Invented exposures; public names appear only as obligors; internal ratings are synthetic |
+| Gold set | `data/gold/headlines.jsonl` | 50 author-labelled illustrative headlines (ambiguous names, two-company headlines) |
 
-Assumptions: English text only; entity linking covers the 20-company universe plus seven macro
-entities; macro and geopolitical news that names no tracked entity is attributed to the US equity
-market. All data is public or synthetic; no proprietary or client data is used. Every dataset is
-listed with its licence in [`data/MANIFEST.yaml`](data/MANIFEST.yaml).
+Assumptions stated openly:
+- The brief asks Module B to use "the provided sample transaction data", but the suggested public
+  datasets are retail (card and key-worker banking transactions). Seismo builds the wholesale
+  equivalent instead: a trade blotter aggregated into loans, bonds, derivatives and equities.
+- PDs by rating are smoothed from S&P Global Ratings' public default studies; staging thresholds
+  (3+ notches or BB- and below for Stage 2) are illustrative proxies, not RBI's exact rules.
+- English only; survivorship bias from today's index membership.
+- All data is public or synthetic. No S&P Global or Crisil client data and no proprietary data is
+  used. Every file is listed with source, licence, row count and SHA-256 in
+  [`data/MANIFEST.yaml`](data/MANIFEST.yaml); see also [`docs/cards/data_cards.md`](docs/cards/data_cards.md).
 
 ## 4. Quickstart & Installation
 
-Runtime: Python 3.11+ on macOS, Linux or Windows (developed on Python 3.12, Ubuntu 24.04).
+Runtime: Python 3.11+ on macOS, Linux or Windows (developed on Python 3.12/3.13, Ubuntu 24.04).
 
 ```bash
 git clone https://github.com/<your-username>/iitkgp-pawan-sharma-hackathon.git
@@ -80,75 +89,75 @@ pip install -e .
 python -m seismo demo
 ```
 
-`python -m seismo demo` opens the Risk Radar at http://localhost:8501, serves the API at
-http://localhost:8000/docs and starts the default replay automatically. No API keys are needed.
+`python -m seismo demo` opens the dashboard at http://localhost:8501, serves the API at
+http://localhost:8000/docs and starts the DeepSeek replay. No API keys are needed. Pick another
+pack (SVB, tariff shock, red team, quiet day) in the sidebar. Docker: `docker compose up`.
 
-Optional: real FinBERT sentiment instead of the lexicon fallback.
+| Command | What it does |
+| --- | --- |
+| `make results` | Regenerates every number in this README and the deck into `docs/results/` |
+| `make data` | Downloads public market data into `data/market/` (set `SEISMO_EDGAR_USER_AGENT` first) |
+| `make shocks` / `make impact` | Computes the crisis-analog shocks / trains the impact event study |
+| `python -m seismo stress --scenario svb_2023 --impact 10 --entity SIVB` | One Module B run, printed as a risk memo |
+| `python -m seismo analyze "Tesla recalls 200,000 vehicles"` | Score one headline |
+| `python -m seismo live --minutes 45 --record data/replay/live.jsonl` | Stream live sources and record a pack |
+| `pytest` | Test suite |
 
-```bash
-pip install torch --index-url https://download.pytorch.org/whl/cpu
-pip install -r requirements-ml.txt
-```
-
-Live sources and recording a replay pack:
-
-```bash
-export SEISMO_EDGAR_USER_AGENT="Your Name your.email@example.com"   # SEC requires this
-python -m seismo live --minutes 45 --record data/replay/live_capture.jsonl
-python -m seismo replay --pack data/replay/live_capture.jsonl --speed 600 --reset
-```
-
-Other commands: `python -m seismo analyze "Tesla recalls 200,000 vehicles"`, `python -m seismo api`,
-`python -m seismo ui`, `python -m seismo schema`, and `pytest` for the test suite.
+Optional real FinBERT sentiment: `pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements-ml.txt`.
 
 ## 5. Key Results & Domain Impact
 
-Current output (Day 1): every document becomes one signal per linked entity, with sentiment, event
-class, impact, novelty, relevance, corroboration and evidence spans that are exact substrings of the
-source text. Replays are deterministic: the same pack yields identical signal ids and scores.
+All numbers below come from [`docs/results/results.md`](docs/results/results.md), produced by
+`make results` (lexicon sentiment backend, CPU).
 
-Quantitative results against naive baselines are produced by `make results` and reported here from
-Day 6: sentiment and event accuracy, impact calibration, Module A backtest with costs, Module B
-trigger precision, latency and cost per 1,000 documents.
+**The gate fires on real crises and holds on the fake.** Naive baseline: fire a stress test on
+any document with 10 x |sentiment| > 7.
 
-Domain impact: Seismo follows the chain banks and rating agencies already run, from negative-news
-analytics to early-warning flags to quantified portfolio stress, and does it with explainable,
-reproducible signals.
+| Pack | Should trigger | Naive stress tests | Seismo auto-triggers | Held for review | First Seismo trigger | Correct |
+| --- | --- | --- | --- | --- | --- | --- |
+| SVB 2023 | yes | 4 | 1 | 0 | 25.4 h before regulators closed the bank | yes |
+| DeepSeek 2025 | yes | 4 | 1 | 0 | 3.2 h before Monday's open | yes |
+| Tariff shock 2025 | yes | 3 | 2 | 0 | 15.2 h before the first open | yes |
+| Red team (fake) | no | 1 | 0 | 1, then retracted | - | yes |
+| Quiet day | no | 1 | 0 | 0 | - | yes |
 
-## Signal contract (schema v1)
+- **Red team:** a lookalike account and 40 near-identical reposts push impact to 9, but the story
+  has zero credible independent publishers and a coordinated group, so it waits in REVIEW; the
+  issuer's denial retracts it and unwinds its weight. A naive pipeline stress-tests the fake at once.
+- **Corroboration:** in the red-team pack 45 documents collapse into one story with 0 credible
+  publishers; in SVB, 27 documents become 12 events with up to 8 independent owners.
+- **Module A (DeepSeek replay):** NVDA's weight is cut from 5.0% to 2.2% on Sunday at 11:22 ET,
+  22 hours before Monday's open, with 10.5% turnover versus 59.7% for the naive tilt.
+- **Gold set:** entity linking precision 1.00 vs 0.83 for exact alias matching ("Apple pie" does
+  not become AAPL); entity-window sentiment 0.87 vs 0.76 for whole-document sentiment on
+  two-company headlines.
+- **Latency:** about 1 ms per document on CPU, no LLM calls on the critical path.
+- **Module B and the impact calibration** need the public market data (`make data`, `make shocks`,
+  `make impact`); their tables are in Model Lab and `docs/results/` once run.
 
-```json
-{
-  "schema_version": "1.0",
-  "grain": "document",
-  "entity": {"type": "company", "id": "NVDA", "name": "NVIDIA Corp.", "sector": "Information Technology"},
-  "sentiment_score": -0.3, "sentiment_confidence": 0.18,
-  "event": {"primary": "PRODUCT_STRATEGY", "subtype": "COMPETITIVE_THREAT", "confidence": 0.95},
-  "impact_score": 3, "novelty": 100, "relevance": 95,
-  "corroboration": {"independent_publishers": 1, "source_types": ["news"], "authoritative": false},
-  "evidence": [{"publisher": "market-daily.example", "span": "Nvidia shares slide in premarket after a rival lab releases a cheaper AI model"}]
-}
-```
+![Red team](docs/img/red-team.png)
 
-Shortened for display; the full schema is in [`docs/signal_schema.json`](docs/signal_schema.json).
+**Domain impact.** Seismo is the missing link in the chain banks and rating agencies already run:
+negative-news analytics, then early-warning flags, then a quantified portfolio stress, with a
+human review queue for anything the evidence does not support. For an Indian bank preparing for
+RBI's expected-credit-loss framework (directions issued April 2026, effective 1 April 2027), it
+turns a headline into a staged ECL and a CET1 number in seconds, and says exactly which sources
+and which assumptions produced them. Impact is a calibrated probability, the LLM never sets a
+number, and every claim links to its evidence: the governance a model-risk reviewer asks for.
 
-## Repository layout
+Limitations: synthetic reconstructions stand in for archived 2023-2025 social data; the lexicon is
+a baseline (the target-masked FinBERT fine-tune is next); the backtest runs on replay windows, not
+a multi-year news archive. Next: Hindi and regional-language news, supply-chain spillovers,
+counterparty exposure, point-in-time constituents.
 
-```text
-src/seismo/   ingest/ (GDELT, EDGAR, Bluesky, replay) · nlp/ (linker, sentiment, events, novelty,
-              credibility, impact) · signals/ · bus/ · store/ · api/ · ui/ · engine.py · runner.py · cli.py
-data/         universe.csv, replay packs, MANIFEST.yaml
-tests/        unit, adapter-parsing, pipeline and API tests with offline fixtures
-docs/         signal schema, images; deck and architecture diagram land here
-scripts/      data utilities (universe verification)
-```
+Model and data cards: [`docs/cards/`](docs/cards/).
 
 ## AI usage and integrity
 
 This project was built with AI assistance (Anthropic's Claude) for research, design and code
-generation. Every component was reviewed, run and tested by the candidate. All work is original to
-this hackathon; no confidential, proprietary or client data from S&P Global, Crisil or anyone else
-is used.
+generation. Every component was reviewed, run and tested by the candidate. The work is original to
+this hackathon; no competitor code was used, and no confidential, proprietary or client data from
+S&P Global, Crisil or anyone else is used.
 
 ## Licence
 

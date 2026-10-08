@@ -1,14 +1,68 @@
-# Every dataset Seismo uses: source, licence, how it was produced. Checksums are added by
-# `make results` from Day 6. Nothing here is proprietary or client data.
+note: 'Every dataset Seismo uses. Nothing here is proprietary or client data. Regenerate: python -m seismo.eval.manifest'
 datasets:
-  - path: data/universe.csv
-    description: 20 S&P 100 companies across all 11 GICS sectors, with SEC CIKs and name aliases
-    source: SEC company_tickers.json (https://www.sec.gov/files/company_tickers.json); aliases hand-written
-    licence: US government public data; aliases original work (MIT)
-    verify: python scripts/refresh_universe.py
-    synthetic: false
-  - path: data/replay/demo_synthetic.jsonl
-    description: 35 invented documents used for smoke tests and the first demo
-    source: written for this repository
-    licence: MIT
-    synthetic: true
+- path: data/blotter/obligors.csv
+  source: python -m seismo blotter (seed 2026); internal ratings synthetic
+  licence: MIT
+  synthetic: true
+  rows: 60
+  sha256: 1ce14469626b3f5a416cba0a5360eefc04faa0240321a9bf097672c0ca98c424
+- path: data/blotter/trade_blotter.csv
+  source: python -m seismo blotter (seed 2026)
+  licence: MIT
+  synthetic: true
+  rows: 561
+  sha256: 46d252f75b6c5df58b95b9ed1d28d10259b629cb3ccc01592bd44304079d5f57
+- path: data/gold/headlines.jsonl
+  source: Author-labelled illustrative headlines
+  licence: MIT
+  synthetic: true
+  rows: 50
+  sha256: 4515c465a39932628b704e3876ba99a3b5da71181c8f395b517fe0a4e7b0bb8e
+- path: data/replay/deepseek_2025.jsonl
+  source: 'Author: paraphrased reconstruction of public reporting'
+  licence: MIT
+  synthetic: true
+  rows: 21
+  sha256: 3d810aee5317c04d356a037d9cab499c157aaf6734cc622d373670261c9a5e98
+- path: data/replay/demo_synthetic.jsonl
+  source: 'Author: fictional smoke-test pack'
+  licence: MIT
+  synthetic: true
+  rows: 35
+  sha256: d2778f3bd1cb2c3862b3b74585a43ee4bc13b17af2975179cfb366bdf95b3886
+- path: data/replay/quiet_day.jsonl
+  source: 'Author: fictional control session'
+  licence: MIT
+  synthetic: true
+  rows: 13
+  sha256: 7d25f9e774e13988c707e8c434183c92bcd3c0600e8e4a4fb91770be169d2f9e
+- path: data/replay/red_team.jsonl
+  source: 'Author: fictional red-team scenario'
+  licence: MIT
+  synthetic: true
+  rows: 45
+  sha256: d8abb8a21f869fc64dc87f44ab7acaf4b182cbdf3a2944c2a16c741f721ce6a8
+- path: data/replay/svb_2023.jsonl
+  source: 'Author: paraphrased reconstruction of public reporting'
+  licence: MIT
+  synthetic: true
+  rows: 27
+  sha256: 869a4bd054b058c657b3bd37b00fc2d560660c75196df94b9350801d2501c55c
+- path: data/replay/tariff_2025.jsonl
+  source: 'Author: paraphrased reconstruction of public reporting'
+  licence: MIT
+  synthetic: true
+  rows: 18
+  sha256: 6b89ecd85e2c7542fbe360c9c121fe6f931b014072f1bba51a31c8fe068fec79
+- path: data/universe.csv
+  source: SEC company_tickers.json (CIKs); aliases and domains by the author
+  licence: Public / MIT
+  synthetic: false
+  rows: 20
+  sha256: 44a6d49a4b28cf7abad1e08ed66d50e27efaa711be7366215fcecd368dec992d
+- path: data/watchlist.csv
+  source: Author; Harbor National Bank is fictional
+  licence: MIT
+  synthetic: true
+  rows: 5
+  sha256: 2c57c21526597fe9079fac5ddc43cb2c341b02c7199dca023cdc3a57a0e69c5f

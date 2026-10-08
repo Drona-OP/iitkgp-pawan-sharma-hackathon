@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seismo"
-version = "0.1.0"
+version = "0.9.0"
 description = "Seismo: an AI/NLP risk engine that turns news, filings and social posts into calibrated risk signals"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,6 +20,8 @@ dependencies = [
   "streamlit>=1.50",
   "plotly>=5.20",
   "pandas>=2.1",
+  "numpy>=1.26",
+  "scikit-learn>=1.4",
 ]
 
 [project.optional-dependencies]

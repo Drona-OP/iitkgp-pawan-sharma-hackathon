@@ -3,6 +3,7 @@
     "Corroboration": {
       "properties": {
         "independent_publishers": {
+          "description": "Distinct owners of news and filings reporting the story",
           "minimum": 0,
           "title": "Independent Publishers",
           "type": "integer"
@@ -23,6 +24,45 @@
           "default": false,
           "title": "Disputed",
           "type": "boolean"
+        },
+        "publishers_60m": {
+          "default": 0,
+          "description": "Independent publishers in the last 60 minutes",
+          "minimum": 0,
+          "title": "Publishers 60M",
+          "type": "integer"
+        },
+        "social_authors": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Social Authors",
+          "type": "integer"
+        },
+        "coordinated": {
+          "default": false,
+          "description": "Near-identical posts from many accounts detected",
+          "title": "Coordinated",
+          "type": "boolean"
+        },
+        "publishers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Publishers",
+          "type": "array"
+        },
+        "first_seen": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "First Seen"
         }
       },
       "required": [
@@ -207,7 +247,7 @@
   "description": "The engine's output contract (schema v1). Published on the bus and served by the API.",
   "properties": {
     "schema_version": {
-      "default": "1.0",
+      "default": "1.1",
       "title": "Schema Version",
       "type": "string"
     },
@@ -319,6 +359,35 @@
       "default": false,
       "title": "Synthetic",
       "type": "boolean"
+    },
+    "cluster_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cluster Id"
+    },
+    "status": {
+      "default": "active",
+      "enum": [
+        "active",
+        "disputed",
+        "retracted"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "flags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Flags",
+      "type": "array"
     }
   },
   "required": [

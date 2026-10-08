@@ -21,5 +21,12 @@ jobs:
           python -m pip install -e .
       - name: Lint
         run: ruff check src tests scripts
-      - name: Test (includes the replay smoke test)
+      - name: Test (finance maths, replay packs, gate, modules, API)
         run: pytest
+      - name: Replay smoke test (every pack, full pipeline)
+        run: |
+          for p in deepseek_2025 svb_2023 tariff_2025 red_team quiet_day; do
+            python -m seismo replay --pack data/replay/$p.jsonl --speed 0 --reset
+          done
+      - name: Results bundle reproduces
+        run: python -m seismo.eval.results > /dev/null

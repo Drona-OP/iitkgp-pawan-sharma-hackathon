@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;background:#101826;font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;color:#E6EDF5}
+.wrap{width:1600px;padding:36px 40px;box-sizing:border-box}
+h1{font-size:30px;margin:0 0 4px;font-weight:600}.sub{color:#8A9BB0;margin:0 0 24px;font-size:16px}
+.row{display:flex;gap:14px;margin-bottom:12px}.box{flex:1;background:#172234;border:1px solid #24324A;border-radius:10px;padding:12px 14px}
+.box b{display:block;font-size:16px;margin-bottom:3px}.box span{color:#8A9BB0;font-size:13px;line-height:1.35}
+.arrow{text-align:center;color:#4FA3A5;font-size:20px;margin:2px 0 8px}
+.engine{border:1px solid #2E4363;border-radius:14px;padding:14px;background:#131D2E;margin-bottom:6px}
+.engine .title{display:flex;justify-content:space-between;color:#8A9BB0;font-size:14px;margin-bottom:10px}
+.engine .title b{color:#E6EDF5;font-size:17px}
+.bus{background:#12324A;border:2px solid #4FA3A5;border-radius:12px;padding:12px;text-align:center}
+.bus b{font-size:18px}.bus span{color:#B9D6E0;font-size:14px}
+.mod{border-color:#4FA3A5}.gate{border-color:#E0B04C}.num{color:#4FA3A5;font-weight:600}
+.lab{font-size:12px;color:#8A9BB0;text-align:center;margin:4px 0}
+</style></head><body><div class="wrap">
+<h1>Seismo: one signal bus feeds a tactical and a strategic consumer</h1>
+<p class="sub">Replay packs and live sources share every downstream step. Default run is offline and deterministic; live mode is opt-in.</p>
+<div class="row">
+<div class="box"><b>GDELT news</b><span>DOC 2.0 API, 15-min, keyless</span></div>
+<div class="box"><b>SEC EDGAR 8-K</b><span>item codes as authoritative labels</span></div>
+<div class="box"><b>Bluesky Jetstream</b><span>real-time posts, cashtags, author caps</span></div>
+<div class="box"><b>Replay packs</b><span>SVB, DeepSeek, tariff, red team, quiet day (JSONL)</span></div>
+</div>
+<div class="arrow">&#8595; normalize: one Document schema, UTC timestamps, content-hash ids, live or replay clock</div>
+<div class="engine"><div class="title"><b>AI/NLP Risk Engine</b><span>CPU-only, deterministic in replay, ~1 ms per document</span></div>
+<div class="row">
+<div class="box"><b><span class="num">1</span> Event classifier</b><span>8-K items + weighted rules, 10 classes, subtype, confidence</span></div>
+<div class="box"><b><span class="num">2</span> Entity linking</b><span>aliases, cashtags, CIK; context check for "Apple", "Meta"; relevance 0-100</span></div>
+<div class="box"><b><span class="num">3</span> Entity sentiment</b><span>clause-level window per entity; FinBERT or finance lexicon; -1..+1, confidence</span></div>
+</div><div class="row">
+<div class="box"><b><span class="num">4</span> Credibility</b><span>by domain and owner, never by badge; lookalike domains flagged</span></div>
+<div class="box"><b><span class="num">5</span> Event clusters</b><span>MinHash syndication, 24h novelty chains, coordinated-repost groups, denials &rarr; retraction</span></div>
+<div class="box"><b><span class="num">6</span> Impact 1-10</b><span>8-K event study: P(|SCAR| &gt; 2), isotonic-calibrated; "how big if true"</span></div>
+</div></div>
+<div class="arrow">&#8595;</div>
+<div class="bus"><b>Signal bus &middot; schema v1.1</b><br><span>document, event and entity grains &middot; evidence spans are exact substrings &middot; SQLite store &middot; FastAPI REST + WebSocket &middot; JSON Schema</span></div>
+<div class="row" style="margin-top:12px">
+<div class="box mod"><b>Module A &middot; tactical rebalancer</b><span>20 S&amp;P 100 names, 11 sectors &middot; S&amp;P DJI-style filters &middot; decayed, shrunk z-scores &middot; inverse-vol tilt on capped cap weights &middot; 15% name / 5% active caps &middot; circuit breaker &middot; 2% no-trade band &middot; 5 bp costs</span></div>
+<div class="box gate"><b>Trigger gate</b><span>impact &ge; 8 &middot; analog exists &middot; confidence &ge; 0.7 &middot; &ge; 3 independent publishers in 60 min or 1 authoritative &middot; not disputed &rarr; TRIGGER / REVIEW / RETRACT</span></div>
+<div class="box mod"><b>Module B &middot; strategic stress test</b><span>trade blotter &rarr; wholesale book &middot; historical-analog factor shocks &middot; bonds, swaps, CDS, FX, options &middot; Vasicek PD, migration, ECL staging &middot; CET1 vs Basel 7% / RBI 8% &middot; reverse stress &middot; memo</span></div>
+</div>
+<div class="arrow">&#8595;</div>
+<div class="row"><div class="box" style="text-align:center"><b>Dashboard (Streamlit)</b><span>Risk Radar &middot; Module A &middot; Module B &middot; Model Lab &middot; Try It (type a headline, run the red team)</span></div></div>
+</div></body></html>
