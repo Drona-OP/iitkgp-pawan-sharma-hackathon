@@ -1,0 +1,17 @@
+ticker,name,cik,sector,aliases,ambiguous_aliases,extra_cashtags,domains
+RELIANCE.NS,Reliance Industries Ltd,,Energy,Reliance Industries|RIL|Reliance Jio,Reliance,RELIANCE,ril.com|jio.com
+HDFCBANK.NS,HDFC Bank Ltd,,Financials,HDFC Bank,,HDFCBANK,hdfcbank.com
+ICICIBANK.NS,ICICI Bank Ltd,,Financials,ICICI Bank,,ICICIBANK,icicibank.com
+INFY.NS,Infosys Ltd,,Information Technology,Infosys,,INFY,infosys.com
+TCS.NS,Tata Consultancy Services Ltd,,Information Technology,Tata Consultancy Services|TCS,,TCS,tcs.com
+ITC.NS,ITC Ltd,,Consumer Staples,ITC Ltd|ITC Limited,ITC,ITC,itcportal.com
+LT.NS,Larsen & Toubro Ltd,,Industrials,Larsen & Toubro|Larsen and Toubro|L&T,,LT,larsentoubro.com
+SBIN.NS,State Bank of India,,Financials,State Bank of India|SBI,,SBIN,sbi.co.in
+BHARTIARTL.NS,Bharti Airtel Ltd,,Communication Services,Bharti Airtel|Airtel,,BHARTIARTL,airtel.in
+AXISBANK.NS,Axis Bank Ltd,,Financials,Axis Bank,,AXISBANK,axisbank.com
+KOTAKBANK.NS,Kotak Mahindra Bank Ltd,,Financials,Kotak Mahindra Bank|Kotak Bank,Kotak,KOTAKBANK,kotak.com
+HINDUNILVR.NS,Hindustan Unilever Ltd,,Consumer Staples,Hindustan Unilever|HUL,,HINDUNILVR,hul.co.in
+BAJFINANCE.NS,Bajaj Finance Ltd,,Financials,Bajaj Finance,,BAJFINANCE,bajajfinserv.in
+MARUTI.NS,Maruti Suzuki India Ltd,,Consumer Discretionary,Maruti Suzuki|Maruti,,MARUTI,marutisuzuki.com
+ADANIENT.NS,Adani Enterprises Ltd,,Industrials,Adani Enterprises|Adani Group|Adani group|Adani,,ADANIENT,adanienterprises.com|adani.com
+ADANIPORTS.NS,Adani Ports and SEZ Ltd,,Industrials,Adani Ports|APSEZ|Adani Ports and Special Economic Zone,,ADANIPORTS,adaniports.com|adani.com

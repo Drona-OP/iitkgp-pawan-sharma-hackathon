@@ -3,7 +3,7 @@
     pip install yfinance pandas
     export SEISMO_EDGAR_USER_AGENT="Your Name your.email@example.com"   # SEC requires this
     python scripts/fetch_data.py                 # everything, about 2-5 minutes
-    python scripts/fetch_data.py --only prices   # or: fred, edgar, caps
+    python scripts/fetch_data.py --only prices   # or: fred, edgar, caps, india, gdelt
 
 Writes small CSVs to data/market/ (a few MB in total, safe to commit):
 
@@ -14,7 +14,11 @@ Writes small CSVs to data/market/ (a few MB in total, safe to commit):
                        ICE BofA IG / BBB / HY OAS where FRED history allows (FRED, keyless CSV)
     edgar_8k.csv       every 8-K the 20 universe companies filed, with item codes and the
                        SEC acceptance timestamp (data.sec.gov submissions API)
-    caps.csv           current market capitalisation per universe ticker (yfinance fast_info)
+    caps.csv           current market capitalisation per universe ticker (SEC shares x close)
+    shares_in.csv      shares outstanding for the 16 NSE names in data/universe_in.csv (yfinance)
+    ../gdelt/*.csv     real article URLs, publishers and GDELT timestamps for three news windows
+                       (SVB week, the Adani-Hindenburg week, a quiet control week), from the
+                       GDELT 2.0 event exports (about 200-300 MB downloaded, a few MB kept)
 
 Every source is free and public. Licences and checksums are recorded in data/MANIFEST.yaml by
 `python -m seismo.eval.manifest`.
@@ -36,6 +40,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "market"
 UNIVERSE = ROOT / "data" / "universe.csv"
+UNIVERSE_IN = ROOT / "data" / "universe_in.csv"
+GDELT_OUT = ROOT / "data" / "gdelt"
 START = "2007-01-01"
 
 SECTOR_ETFS = ["XLK", "XLC", "XLY", "XLF", "XLV", "XLE", "XLI", "XLP", "XLU", "XLB", "XLRE"]
@@ -48,6 +54,8 @@ YAHOO_FACTORS = {
     "DX-Y.NYB": "DXY",
     "INR=X": "USDINR",
     "EURUSD=X": "EURUSD",
+    "^NSEI": "NIFTY50",
+    "^NSEBANK": "NIFTYBANK",
 }
 FRED_SERIES = {
     "DGS3MO": "UST_3M",
@@ -63,13 +71,16 @@ FRED_SERIES = {
     "VIXCLS": "VIX_FRED",
     "DCOILBRENTEU": "BRENT_FRED",
     "DEXINUS": "USDINR_FRED",
+    "INDIRLTLT01STM": "IN_10Y",      # India 10-year government bond yield (OECD, monthly)
 }
 FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}&cosd=2007-01-01"
 SEC_SUBMISSIONS = "https://data.sec.gov/submissions/{name}"
 
 
-def universe_rows() -> list[dict[str, str]]:
-    with UNIVERSE.open(encoding="utf-8", newline="") as fh:
+def universe_rows(path: Path = UNIVERSE) -> list[dict[str, str]]:
+    if not path.exists():
+        return []
+    with path.open(encoding="utf-8", newline="") as fh:
         return list(csv.DictReader(fh))
 
 
@@ -160,7 +171,8 @@ def fetch_prices() -> None:
         yf.set_tz_cache_location(str(cache))  # avoids "database is locked" inside synced folders
     except Exception:  # noqa: BLE001
         pass
-    tickers = [r["ticker"] for r in universe_rows()] + MARKET + SECTOR_ETFS + list(YAHOO_FACTORS)
+    tickers = ([r["ticker"] for r in universe_rows()] + [r["ticker"] for r in universe_rows(UNIVERSE_IN)]
+               + MARKET + SECTOR_ETFS + list(YAHOO_FACTORS))
     closes, opens = _read_existing("prices_daily.csv"), _read_existing("prices_open.csv")
     todo = [t for t in tickers if YAHOO_FACTORS.get(t, t) not in closes.columns or closes[YAHOO_FACTORS.get(t, t)].isna().all()]
     print(f"[prices] {len(tickers) - len(todo)} symbols already saved, fetching {len(todo)} ...")
@@ -340,7 +352,124 @@ def fetch_edgar() -> None:
     print(f"[edgar] wrote {len(rows)} filings")
 
 
-STEPS = {"prices": fetch_prices, "fred": fetch_fred, "edgar": fetch_edgar, "caps": fetch_caps}
+def fetch_india() -> None:
+    """Shares outstanding for the NSE names (yfinance); the replay multiplies by the close on the day."""
+    rows = []
+    for r in universe_rows(UNIVERSE_IN):
+        t = r["ticker"]
+        shares, src = float("nan"), "yfinance"
+        try:
+            import yfinance as yf
+
+            tk = yf.Ticker(t)
+            try:
+                shares = float(tk.fast_info["shares"])
+            except Exception:  # noqa: BLE001
+                shares = float(tk.info.get("sharesOutstanding") or "nan")
+        except Exception as exc:  # noqa: BLE001
+            src = f"failed ({exc.__class__.__name__})"
+        print(f"[india] {t:14s} {shares / 1e9:8.3f} bn shares  ({src})")
+        rows.append({"ticker": t, "shares": shares})
+        time.sleep(0.5)
+    if all(r["shares"] != r["shares"] for r in rows):
+        raise RuntimeError("no share counts; check the internet connection and rerun `--only india`")
+    with (OUT / "shares_in.csv").open("w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["ticker", "shares"], lineterminator="\n")
+        w.writeheader()
+        w.writerows(rows)
+    print(f"[india] wrote {len(rows)} rows")
+
+
+# Real-news windows from the GDELT 2.0 event exports (one zip every 15 minutes since 2015).
+# Each row of an export carries the first article that reported an event: its URL, and the
+# 15-minute slot when GDELT saw it. We keep only articles whose URL matches the window's terms.
+GDELT_WINDOWS = {
+    "svb_2023": ("2023-03-08 12:00", "2023-03-10 18:00",
+                 r"svb|silicon-?valley-?bank|signature-?bank|first-?republic|bank-?run|fdic|"
+                 r"bank-?(?:collapse|failure|crisis)|regional-?banks?|deposit"),
+    "adani_2023": ("2023-01-24 00:00", "2023-01-28 00:00", r"adani|hindenburg"),
+    "control_2024": ("2024-05-07 00:00", "2024-05-09 00:00", None),   # None -> universe names
+}
+GDELT_URL = "http://data.gdeltproject.org/gdeltv2/{stamp}.export.CSV.zip"
+
+
+def _universe_terms() -> str:
+    import re
+
+    terms = set()
+    for r in universe_rows():
+        for alias in (r.get("aliases") or "").split("|"):
+            alias = alias.strip().lower()
+            if len(alias) >= 5 and alias.replace(" ", "").isalpha():
+                terms.add(re.escape(alias).replace(r"\ ", "-?"))
+    return "|".join(sorted(terms))
+
+
+def _gdelt_slot(stamp: str, pattern) -> tuple[list[tuple[str, str, str]], bool]:
+    import zipfile
+
+    try:
+        raw = _get(GDELT_URL.format(stamp=stamp), tries=3, timeout=60)
+    except RuntimeError:
+        return [], False
+    out = []
+    with zipfile.ZipFile(io.BytesIO(raw)) as zf:
+        for name in zf.namelist():
+            for line in zf.read(name).decode("utf-8", "replace").splitlines():
+                cols = line.split("\t")
+                if len(cols) < 61:
+                    continue
+                url = cols[60].strip()
+                if url and pattern.search(url.lower()):
+                    out.append((cols[59].strip(), url, cols[34].strip()))   # DATEADDED, SOURCEURL, AvgTone
+    return out, True
+
+
+def fetch_gdelt() -> None:
+    import re
+    from concurrent.futures import ThreadPoolExecutor
+    from datetime import datetime, timedelta
+
+    GDELT_OUT.mkdir(parents=True, exist_ok=True)
+    failed = []
+    for name, (start, end, terms) in GDELT_WINDOWS.items():
+        path = GDELT_OUT / f"{name}.csv"
+        if path.exists() and path.stat().st_size > 1000 and not os.environ.get("SEISMO_REFETCH"):
+            print(f"[gdelt] {name}: already saved")
+            continue
+        pattern = re.compile(terms or _universe_terms())
+        t0, t1 = datetime.fromisoformat(start), datetime.fromisoformat(end)
+        stamps = []
+        while t0 < t1:
+            stamps.append(t0.strftime("%Y%m%d%H%M%S"))
+            t0 += timedelta(minutes=15)
+        rows: dict[str, tuple[str, str]] = {}
+        missing = 0
+        print(f"[gdelt] {name}: {len(stamps)} files of about 0.3 MB ...")
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            for i, (found, ok) in enumerate(pool.map(_gdelt_slot, stamps, [pattern] * len(stamps)), 1):
+                missing += not ok
+                for added, url, tone in found:
+                    if url not in rows or added < rows[url][0]:
+                        rows[url] = (added, tone)
+                if i % 48 == 0 or i == len(stamps):
+                    print(f"[gdelt] {name}: {i}/{len(stamps)} files, {len(rows)} matching articles")
+        if missing > len(stamps) // 4:
+            failed.append(name)
+            print(f"[gdelt] {name}: {missing} files could not be downloaded; not saved")
+            continue
+        with path.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(["date_added", "url", "gdelt_tone"])
+            for url, (added, tone) in sorted(rows.items(), key=lambda kv: (kv[1][0], kv[0])):
+                w.writerow([added, url, tone])
+        print(f"[gdelt] {name}: wrote {len(rows)} articles ({missing} files missing)")
+    if failed:
+        raise RuntimeError(f"GDELT windows incomplete: {failed}; rerun `--only gdelt`")
+
+
+STEPS = {"prices": fetch_prices, "fred": fetch_fred, "edgar": fetch_edgar, "caps": fetch_caps,
+         "india": fetch_india, "gdelt": fetch_gdelt}
 
 
 def main() -> int:
@@ -356,7 +485,7 @@ def main() -> int:
             print(f"[{name}] FAILED: {exc}")
             failed.append(name)
     print("\nDone." + (f" Failed steps: {failed}" if failed else " All steps succeeded."))
-    print(f"Files are in {OUT}. Zip that folder and upload it to the chat.")
+    print(f"Files are in {OUT} and {GDELT_OUT}. Zip the data folder's market and gdelt folders and upload them.")
     return 1 if failed else 0
 
 
