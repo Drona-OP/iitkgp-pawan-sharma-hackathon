@@ -46,7 +46,8 @@ def event_label(cluster: Cluster) -> EventLabel:
     # OTHER only wins when nothing else was said.
     ranked = sorted(votes.items(), key=lambda kv: (kv[0] == EventClass.OTHER, -kv[1]))
     top, top_w = ranked[0]
-    total = sum(votes.values())
+    # Commentary (OTHER) neither wins nor dilutes: confidence is the share among real classes.
+    total = sum(w for c, w in votes.items() if c != EventClass.OTHER) or sum(votes.values())
     members = [m for m in cluster.members if m.event == top]
     mean_conf = sum(m.event_conf for m in members) / len(members)
     conf = (top_w / total) * mean_conf

@@ -65,11 +65,43 @@ NEGATORS = frozenset(
      "aren't", "don't", "doesn't"}
 )
 
+# Words that signal acute stress or relief count double: a liquidity crisis is not a soft quarter.
+STRONG_NEGATIVE = frozenset(
+    {
+        "crisis", "collapse", "collapses", "collapsed", "crash", "crashes", "plunge", "plunges",
+        "plunged", "bankrupt", "bankruptcy", "insolvent", "insolvency", "default", "defaulted",
+        "fraud", "failure", "failed", "fails", "panic", "rout", "turmoil", "contagion",
+        "receivership", "halt", "halts", "halted", "halting", "bloodbath", "brutal", "crushed",
+        "wiped", "tumble", "tumbles", "tumbled", "worst", "selloff", "sell-off", "run",
+    }
+)
+EXTRA_NEGATIVE = frozenset(
+    {
+        "doubts", "doubt", "worried", "nervous", "uncertain", "pressure", "rattles", "rattled",
+        "hurt", "hurts", "dilution", "retaliates", "retaliatory", "escalates", "escalated",
+        "escalating", "recession", "slowdown", "slows", "slower", "slides", "sliding", "drags",
+        "dragging", "fallout", "outflows", "ugly", "losing", "rattle", "threat", "threatens",
+        "risk", "risks", "spook", "scramble", "fled", "flee", "flight", "suspended", "suspends",
+        "downturn", "shock", "slashes", "slashed",
+    }
+)
+EXTRA_POSITIVE = frozenset(
+    {
+        "soar", "soaring", "rallied", "ripping", "jumped", "best", "recover", "protected",
+        "backstop", "inflows", "rebounds", "rebounded", "beats", "upbeat", "reassures",
+        "reassured", "accelerates", "accelerating", "record-high", "approval", "eases", "eased",
+        "easing", "pause", "relief",
+    }
+)
+POSITIVE = POSITIVE | EXTRA_POSITIVE
+NEGATIVE = (NEGATIVE | EXTRA_NEGATIVE | STRONG_NEGATIVE) - {"pause"}
+STRONG_POSITIVE = frozenset({"soar", "soars", "soared", "surge", "surges", "surged", "record", "best", "rally", "rallied"})
+
 
 class LexiconBackend:
     """Transparent fallback for CI and offline runs. FinBERT replaces it when installed."""
 
-    name = "lexicon-v0"
+    name = "lexicon-v1"
 
     def predict(self, texts: list[str]) -> list[Probs]:
         return [self._score(t) for t in texts]
@@ -82,17 +114,18 @@ class LexiconBackend:
             polarity = 1 if tok in POSITIVE else -1 if tok in NEGATIVE else 0
             if polarity == 0:
                 continue
+            weight = 2.0 if tok in STRONG_NEGATIVE or tok in STRONG_POSITIVE else 1.0
             if any(t in NEGATORS for t in tokens[max(0, i - 3):i]):
                 polarity = -polarity
             if polarity > 0:
-                pos += 1
+                pos += weight
             else:
-                neg += 1
+                neg += weight
         total = pos + neg
         if total == 0:
             return (0.1, 0.8, 0.1)
         balance = (pos - neg) / total
-        strength = 0.9 * min(1.0, total / 3.0)
+        strength = 0.95 * min(1.0, total / 3.0)
         p_pos = 0.5 * strength * (1 + balance)
         p_neg = 0.5 * strength * (1 - balance)
         return (p_neg, 1.0 - p_pos - p_neg, p_pos)

@@ -22,10 +22,22 @@ DOMAIN_CREDIBILITY: dict[str, float] = {
     "washingtonpost.com": 0.85, "bbc.co.uk": 0.85, "bbc.com": 0.85, "theguardian.com": 0.8,
 }
 
+# Stand-in publishers used only by the synthetic replay packs. ".example" is reserved by RFC 2606,
+# so no real outlet is ever quoted with invented words. Tiers mirror the real table above.
+SYNTHETIC_CREDIBILITY: dict[str, float] = {
+    "wire-one.example": 0.95, "wire-two.example": 0.95, "regulator.example": 1.0,
+    "central-bank.example": 1.0, "street-journal.example": 0.9,
+    "street-journal-markets.example": 0.85, "biz-times.example": 0.85, "markets-tv.example": 0.85,
+    "fin-daily.example": 0.8, "market-daily.example": 0.8, "tech-ledger.example": 0.75,
+    "money-post.example": 0.75,
+}
+DOMAIN_CREDIBILITY.update(SYNTHETIC_CREDIBILITY)
+
 # Regulators, filings and the major wires can corroborate an event on their own.
 AUTHORITATIVE = frozenset(
     {"sec.gov", "federalreserve.gov", "rbi.org.in", "ecb.europa.eu", "treasury.gov", "fdic.gov",
-     "reuters.com", "apnews.com", "bloomberg.com"}
+     "reuters.com", "apnews.com", "bloomberg.com",
+     "wire-one.example", "wire-two.example", "regulator.example", "central-bank.example"}
 )
 
 # Common ownership: outlets in one group count as one independent publisher.
@@ -37,11 +49,13 @@ OWNER_GROUP: dict[str, str] = {
     "livemint.com": "ht-media", "hindustantimes.com": "ht-media",
     "moneycontrol.com": "network18", "cnbctv18.com": "network18",
     "bbc.co.uk": "bbc", "bbc.com": "bbc",
+    "street-journal.example": "street-media", "street-journal-markets.example": "street-media",
 }
 
 # Brand tokens a lookalike domain or handle tends to borrow.
 BRANDS = ("reuters", "bloomberg", "apnews", "associatedpress", "wsj", "wallstreetjournal",
-          "cnbc", "marketwatch", "barrons", "financialtimes", "nytimes", "federalreserve", "secgov")
+          "cnbc", "marketwatch", "barrons", "financialtimes", "nytimes", "federalreserve", "secgov",
+          "wireone", "wiretwo", "streetjournal")
 
 DEFAULT_BY_TYPE = {SourceType.NEWS: 0.6, SourceType.SOCIAL: 0.3, SourceType.FILING: 1.0}
 LOOKALIKE_CREDIBILITY = 0.15
