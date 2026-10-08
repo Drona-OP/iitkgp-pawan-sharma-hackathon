@@ -1,0 +1,339 @@
+{
+  "$defs": {
+    "Corroboration": {
+      "properties": {
+        "independent_publishers": {
+          "minimum": 0,
+          "title": "Independent Publishers",
+          "type": "integer"
+        },
+        "source_types": {
+          "items": {
+            "$ref": "#/$defs/SourceType"
+          },
+          "title": "Source Types",
+          "type": "array"
+        },
+        "authoritative": {
+          "default": false,
+          "title": "Authoritative",
+          "type": "boolean"
+        },
+        "disputed": {
+          "default": false,
+          "title": "Disputed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "independent_publishers"
+      ],
+      "title": "Corroboration",
+      "type": "object"
+    },
+    "EntityRef": {
+      "properties": {
+        "type": {
+          "enum": [
+            "company",
+            "macro"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "cik": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cik"
+        },
+        "sector": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sector"
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "name"
+      ],
+      "title": "EntityRef",
+      "type": "object"
+    },
+    "EventClass": {
+      "enum": [
+        "MACROECONOMIC",
+        "GEOPOLITICAL",
+        "CREDIT_EVENT",
+        "MA_CORPORATE_ACTION",
+        "PRODUCT_STRATEGY",
+        "EARNINGS_GUIDANCE",
+        "LEGAL_REGULATORY",
+        "OPERATIONAL_ESG",
+        "MANAGEMENT_GOVERNANCE",
+        "OTHER"
+      ],
+      "title": "EventClass",
+      "type": "string"
+    },
+    "EventLabel": {
+      "properties": {
+        "primary": {
+          "$ref": "#/$defs/EventClass"
+        },
+        "subtype": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtype"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "labels": {
+          "items": {
+            "$ref": "#/$defs/EventClass"
+          },
+          "title": "Labels",
+          "type": "array"
+        },
+        "method": {
+          "default": "rules-v0",
+          "title": "Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "primary",
+        "confidence"
+      ],
+      "title": "EventLabel",
+      "type": "object"
+    },
+    "Evidence": {
+      "properties": {
+        "doc_id": {
+          "title": "Doc Id",
+          "type": "string"
+        },
+        "publisher": {
+          "title": "Publisher",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "span": {
+          "title": "Span",
+          "type": "string"
+        },
+        "weight": {
+          "minimum": 0,
+          "title": "Weight",
+          "type": "number"
+        }
+      },
+      "required": [
+        "doc_id",
+        "publisher",
+        "span",
+        "weight"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "SourceType": {
+      "enum": [
+        "news",
+        "social",
+        "filing"
+      ],
+      "title": "SourceType",
+      "type": "string"
+    }
+  },
+  "description": "The engine's output contract (schema v1). Published on the bus and served by the API.",
+  "properties": {
+    "schema_version": {
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "signal_id": {
+      "title": "Signal Id",
+      "type": "string"
+    },
+    "grain": {
+      "enum": [
+        "document",
+        "event",
+        "entity"
+      ],
+      "title": "Grain",
+      "type": "string"
+    },
+    "as_of": {
+      "format": "date-time",
+      "title": "As Of",
+      "type": "string"
+    },
+    "entity": {
+      "$ref": "#/$defs/EntityRef"
+    },
+    "sentiment_score": {
+      "maximum": 1,
+      "minimum": -1,
+      "title": "Sentiment Score",
+      "type": "number"
+    },
+    "sentiment_confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Sentiment Confidence",
+      "type": "number"
+    },
+    "event": {
+      "$ref": "#/$defs/EventLabel"
+    },
+    "impact_score": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Impact Score",
+      "type": "integer"
+    },
+    "p_large_move": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "P Large Move"
+    },
+    "expected_abs_move_bps": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Abs Move Bps"
+    },
+    "novelty": {
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Novelty",
+      "type": "integer"
+    },
+    "relevance": {
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Relevance",
+      "type": "integer"
+    },
+    "corroboration": {
+      "$ref": "#/$defs/Corroboration"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "model_versions": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Model Versions",
+      "type": "object"
+    },
+    "latency_ms": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Latency Ms",
+      "type": "object"
+    },
+    "synthetic": {
+      "default": false,
+      "title": "Synthetic",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "signal_id",
+    "grain",
+    "as_of",
+    "entity",
+    "sentiment_score",
+    "sentiment_confidence",
+    "event",
+    "impact_score",
+    "novelty",
+    "relevance",
+    "corroboration"
+  ],
+  "title": "Signal",
+  "type": "object"
+}

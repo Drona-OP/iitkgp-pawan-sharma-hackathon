@@ -1,0 +1,14 @@
+# Every dataset Seismo uses: source, licence, how it was produced. Checksums are added by
+# `make results` from Day 6. Nothing here is proprietary or client data.
+datasets:
+  - path: data/universe.csv
+    description: 20 S&P 100 companies across all 11 GICS sectors, with SEC CIKs and name aliases
+    source: SEC company_tickers.json (https://www.sec.gov/files/company_tickers.json); aliases hand-written
+    licence: US government public data; aliases original work (MIT)
+    verify: python scripts/refresh_universe.py
+    synthetic: false
+  - path: data/replay/demo_synthetic.jsonl
+    description: 35 invented documents used for smoke tests and the first demo
+    source: written for this repository
+    licence: MIT
+    synthetic: true

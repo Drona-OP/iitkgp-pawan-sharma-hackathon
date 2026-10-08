@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+data/*.db
+data/*.db-*
+data/raw/
+models/*.onnx
+models/*.bin
+models/*.safetensors
+.DS_Store

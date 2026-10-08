@@ -1,0 +1,53 @@
+# Seismo configuration. Any key can be overridden with an env var:
+# store.path -> SEISMO_STORE_PATH, edgar.user_agent -> SEISMO_EDGAR_USER_AGENT, etc.
+
+store:
+  path: data/seismo.db
+
+universe:
+  path: data/universe.csv
+
+sentiment:
+  backend: auto            # auto | finbert | lexicon
+  finbert_model: ProsusAI/finbert
+
+linker:
+  min_link_score: 0.6      # drop entity links below this disambiguation confidence
+
+novelty:
+  window_hours: 24         # RavenPack-style 24-hour novelty chains
+
+aggregation:
+  half_life_hours: 6       # tactical half-life for the entity sentiment index
+  impact_window_hours: 6
+  history_hours: 72
+
+edgar:
+  user_agent: "Seismo research contact@example.com"   # set SEISMO_EDGAR_USER_AGENT
+  poll_seconds: 60
+  universe_only: true
+
+gdelt:
+  poll_seconds: 900
+  timespan: 1h
+  max_records: 250
+  terms_per_query: 6
+  pause_seconds: 6         # GDELT asks clients to stay gentle
+
+bluesky:
+  endpoint: wss://jetstream2.us-east.bsky.network/subscribe
+  max_cashtags: 5
+  min_chars: 20
+  max_posts_per_author_hour: 5
+
+replay:
+  default_pack: data/replay/demo_synthetic.jsonl
+  speed: 600
+  max_gap_seconds: 2.0
+
+api:
+  host: 127.0.0.1
+  port: 8000
+
+ui:
+  port: 8501

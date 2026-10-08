@@ -1,0 +1,5 @@
+# Real FinBERT sentiment. CPU-only torch keeps the download small:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements-ml.txt
+transformers>=4.44
+torch>=2.2
