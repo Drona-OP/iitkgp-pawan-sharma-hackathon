@@ -129,15 +129,15 @@ def trigger_log() -> None:
     if not decisions:
         st.caption("No gate decisions yet. Replay the SVB, tariff or red-team pack.")
         return
-    seismo = sum(d["decision"] == "TRIGGER" for d in decisions)
-    naive = sum(d["naive_decision"] == "TRIGGER" for d in decisions)
-    review = sum(d["decision"] == "REVIEW" for d in decisions)
-    retract = sum(d["decision"] == "RETRACT" for d in decisions)
+    seismo = len({d["cluster_id"] for d in decisions if d["decision"] == "TRIGGER"})
+    naive = len({d["cluster_id"] for d in decisions if d["naive_decision"] == "TRIGGER"})
+    review = len({d["cluster_id"] for d in decisions if d["decision"] == "REVIEW"})
+    retract = len({d["cluster_id"] for d in decisions if d["decision"] == "RETRACT"})
     c = st.columns(4)
-    c[0].metric("Seismo auto-triggers", seismo)
-    c[1].metric("Naive triggers", naive)
-    c[2].metric("Sent to analyst review", review)
-    c[3].metric("Retractions", retract)
+    c[0].metric("Stories auto-triggered", seismo)
+    c[1].metric("Stories the naive rule fires on", naive)
+    c[2].metric("Stories sent to analyst review", review)
+    c[3].metric("Stories retracted", retract)
     rows = []
     for d in decisions[::-1][:80]:
         failed = [x["name"] for x in d["checks"] if not x["passed"]]
@@ -214,12 +214,15 @@ def render() -> None:
     a.plotly_chart(heatmap(r), width="stretch", config={"displayModeBar": False})
     with b:
         st.markdown("**Top 10 contributors**")
-        st.dataframe(pd.DataFrame(r["top_contributors"])[["name", "asset_class", "loss", "detail"]].rename(
-            columns={"name": "Position", "asset_class": "Class", "loss": "Loss", "detail": "Driver"}),
-            hide_index=True, width="stretch", height=380,
-            column_config={"Loss": st.column_config.NumberColumn(format="dollar")})
+        top = pd.DataFrame(r["top_contributors"])
+        if not top.empty:
+            top["loss"] = top["loss"] / 1e6
+            st.dataframe(top[["name", "asset_class", "loss", "detail"]].rename(
+                columns={"name": "Position", "asset_class": "Class", "loss": "Loss ($mn)", "detail": "Driver"}),
+                hide_index=True, width="stretch", height=380,
+                column_config={"Loss ($mn)": st.column_config.NumberColumn(format="%.1f")})
     st.markdown("**Risk memo** (template; every number injected from the run above)")
-    st.markdown(f"<pre class='memo'>{r['memo']}</pre>", unsafe_allow_html=True)
+    st.code(r["memo"], language=None, wrap_lines=True)
     with st.expander("Shock vector used (analog x severity x m)"):
         from seismo.module_b.factors import shock_table
 

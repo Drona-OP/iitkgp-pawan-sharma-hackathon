@@ -157,11 +157,12 @@ def cmd_demo(args: argparse.Namespace) -> int:
     procs = []
     if not args.no_api:
         procs.append(subprocess.Popen(
-            [sys.executable, "-m", "uvicorn", "seismo.api.app:app", "--port", api_port, "--log-level", "warning"],
+            [sys.executable, "-m", "uvicorn", "seismo.api.app:app", "--host", args.host, "--port", api_port,
+             "--log-level", "warning"],
             cwd=settings.root, env=env,
         ))
     procs.append(subprocess.Popen(
-        [sys.executable, "-m", "streamlit", "run", str(UI_APP), "--server.port", ui_port],
+        [sys.executable, "-m", "streamlit", "run", str(UI_APP), "--server.port", ui_port, "--server.address", args.host],
         cwd=settings.root, env=env,
     ))
     print(f"\nRisk Radar:  http://localhost:{ui_port}")
@@ -234,6 +235,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("demo", help="Start the Risk Radar and the API with the default replay pack")
     p.add_argument("--no-api", action="store_true")
+    p.add_argument("--host", default="127.0.0.1", help="bind address (0.0.0.0 inside Docker)")
     p.set_defaults(func=cmd_demo)
 
     p = sub.add_parser("replay", help="Replay a recorded JSONL pack through the pipeline")

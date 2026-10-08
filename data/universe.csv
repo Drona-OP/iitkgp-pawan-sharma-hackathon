@@ -1,5 +1,5 @@
 ticker,name,cik,sector,aliases,ambiguous_aliases,extra_cashtags,domains
-AAPL,Apple Inc.,0000320193,Information Technology,Apple Inc|iPhone|iPad|MacBook|App Store,Apple,,apple.com
+AAPL,Apple Inc.,0000320193,Information Technology,Apple Inc|iPhone|iPad|MacBook,Apple,,apple.com
 MSFT,Microsoft Corp.,0000789019,Information Technology,Microsoft|Azure|Xbox|LinkedIn,Windows,,microsoft.com|news.microsoft.com
 NVDA,NVIDIA Corp.,0001045810,Information Technology,NVIDIA|Nvidia|GeForce|CUDA,,,nvidia.com|nvidianews.nvidia.com
 GOOGL,Alphabet Inc.,0001652044,Communication Services,Alphabet Inc|Google|YouTube|Waymo,Alphabet,GOOG,abc.xyz|google.com|blog.google

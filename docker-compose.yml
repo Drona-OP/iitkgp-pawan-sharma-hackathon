@@ -1,0 +1,9 @@
+# One command, no keys: dashboard on :8501, API on :8000, default replay starts automatically.
+services:
+  seismo:
+    build: .
+    ports: ["8501:8501", "8000:8000"]
+    environment:
+      SEISMO_API_HOST: 0.0.0.0
+      SEISMO_SENTIMENT_BACKEND: ${SEISMO_SENTIMENT_BACKEND:-lexicon}
+    command: ["python", "-m", "seismo", "demo", "--host", "0.0.0.0"]

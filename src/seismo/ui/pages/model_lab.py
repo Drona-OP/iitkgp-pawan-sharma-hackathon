@@ -30,16 +30,13 @@ def render() -> None:
     sc = pd.DataFrame(res["scorecard"])
     st.dataframe(sc, hide_index=True, width="stretch")
 
-    c1, c2 = st.columns(2, gap="medium")
-    with c1:
-        st.markdown("### Corroboration and dedup")
-        st.dataframe(pd.DataFrame(res["dedup"]), hide_index=True, width="stretch")
-    with c2:
-        st.markdown("### Gold set (entity linking, target sentiment, event class)")
-        gold = res.get("gold")
-        if gold:
-            st.dataframe(pd.DataFrame(gold["table"]), hide_index=True, width="stretch")
-            st.caption(gold.get("note", ""))
+    st.markdown("### Corroboration and dedup: reports vs independent voices")
+    st.dataframe(pd.DataFrame(res["dedup"]), hide_index=True, width="stretch")
+    st.markdown("### Gold set: entity linking, target sentiment, event class")
+    gold = res.get("gold")
+    if gold:
+        st.dataframe(pd.DataFrame(gold["table"]), hide_index=True, width="stretch")
+        st.caption(gold.get("note", ""))
 
     imp = load("impact_report.json")
     st.markdown("### Impact: calibrated on 8-K event studies (|SCAR| > 2)")

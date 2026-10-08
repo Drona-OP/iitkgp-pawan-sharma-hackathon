@@ -41,7 +41,7 @@ def magnitude_strip(events: list[Signal]) -> go.Figure:
         hoverinfo="text",
     ))
     fig.add_hline(y=7.5, line_dash="dot", line_color=SEVERITY["severe"], line_width=1,
-                  annotation_text="Stress-test gate: impact 8 and above", annotation_position="top left",
+                  annotation_text="Stress-test gate: impact 8 and above", annotation_position="top right",
                   annotation_font_color=SEVERITY["severe"], annotation_font_size=12)
     base_layout(fig, "Event magnitude over time (one bar per story update)", 240)
     fig.update_layout(showlegend=False, bargap=0)
@@ -138,8 +138,8 @@ def live_view() -> None:
     m[0].metric("Documents", f"{stats['documents']:,}")
     m[1].metric("Stories", f"{len(stories):,}")
     m[2].metric("Severe stories", f"{sum(s.impact_score >= 8 for s in stories):,}", help="Impact 8 or more")
-    m[3].metric("Auto-triggers", f"{sum(d['decision'] == 'TRIGGER' for d in decisions)}",
-                delta=f"naive: {sum(d['naive_decision'] == 'TRIGGER' for d in decisions)}", delta_color="off",
+    m[3].metric("Auto-triggered stories", f"{len({d['cluster_id'] for d in decisions if d['decision'] == 'TRIGGER'})}",
+                delta=f"naive rule: {len({d['cluster_id'] for d in decisions if d['naive_decision'] == 'TRIGGER'})}", delta_color="off",
                 help="Gate decisions that launched a stress test, versus what a naive impact>7 rule would fire")
     m[4].metric("Engine p50", f"{stats['median_engine_ms']:.1f} ms")
     m[5].metric("Pipeline p95", f"{p95:.1f} ms", help="Document received to signal published (CPU)")

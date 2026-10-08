@@ -75,6 +75,19 @@ def render() -> None:
     m[3].metric("Cost at 5 bp", f"{last['turnover_total'] * 5:.2f} bp", delta=f"naive {last['naive_turnover_total'] * 5:.2f} bp", delta_color="off")
     m[4].metric("Circuit breakers", ", ".join(last["breaker"]) or "none")
 
+    movers = [t for t in tickers if max(abs(s["weights"][t] - s["bench"][t]) for s in snaps) > 0.002]
+    if movers:
+        fig = go.Figure()
+        for i, t in enumerate(sorted(movers, key=lambda t: min(s["weights"][t] - s["bench"][t] for s in snaps))):
+            fig.add_trace(go.Scatter(x=times, y=[s["weights"][t] for s in snaps], name=t, mode="lines+markers",
+                                     line={"shape": "hv", "width": 2.5, "color": PALETTE[i % len(PALETTE)]},
+                                     hovertemplate=f"{t} %{{y:.2%}}<extra></extra>"))
+            fig.add_trace(go.Scatter(x=[times[0], times[-1]], y=[last["bench"][t]] * 2, mode="lines", showlegend=False,
+                                     line={"dash": "dot", "width": 1, "color": PALETTE[i % len(PALETTE)]}, hoverinfo="skip"))
+        base_layout(fig, "Weights of the names that moved (dotted = benchmark)", 340)
+        fig.update_yaxes(tickformat=".1%")
+        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+
     fig = go.Figure()
     for i, t in enumerate(sorted(tickers, key=lambda t: -last["bench"][t])):
         fig.add_trace(go.Scatter(x=times, y=[s["weights"][t] for s in snaps], name=t, stackgroup="w",
