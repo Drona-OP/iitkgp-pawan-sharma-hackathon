@@ -75,7 +75,8 @@ def render() -> None:
     m[3].metric("Cost at 5 bp", f"{last['turnover_total'] * 5:.2f} bp", delta=f"naive {last['naive_turnover_total'] * 5:.2f} bp", delta_color="off")
     m[4].metric("Circuit breakers", ", ".join(last["breaker"]) or "none")
 
-    movers = [t for t in tickers if max(abs(s["weights"][t] - s["bench"][t]) for s in snaps) > 0.002]
+    moved = {t: max(abs(s["weights"][t] - s["bench"][t]) for s in snaps) for t in tickers}
+    movers = [t for t in sorted(moved, key=lambda t: -moved[t]) if moved[t] > 0.002][:6]
     if movers:
         fig = go.Figure()
         for i, t in enumerate(sorted(movers, key=lambda t: min(s["weights"][t] - s["bench"][t] for s in snaps))):

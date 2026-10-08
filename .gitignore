@@ -13,3 +13,5 @@ models/*.onnx
 models/*.bin
 models/*.safetensors
 .DS_Store
+*.mbox
+market.zip

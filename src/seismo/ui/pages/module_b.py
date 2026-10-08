@@ -49,14 +49,14 @@ def waterfall(r: dict) -> go.Figure:
     labels = ["Before"] + [f"{c} {'(ECL)' if c == 'Loans' else '(MTM)'}" for c in order] + ["After"]
     values = [before] + [r["pnl_by_class"].get(c, 0.0) for c in order] + [after]
     fig = go.Figure(go.Waterfall(
-        x=labels, y=values, measure=["absolute"] + ["relative"] * len(order) + ["total"],
+        x=labels, y=[v / 1e9 for v in values], measure=["absolute"] + ["relative"] * len(order) + ["total"],
         text=[bn(v) for v in values], textposition="outside",
         increasing={"marker": {"color": POS}}, decreasing={"marker": {"color": NEG}},
         totals={"marker": {"color": ACCENT}}, connector={"line": {"color": MUTED, "width": 1}},
     ))
     base_layout(fig, "Portfolio value before and after the stress (by asset class)", 340)
-    lo = min(before, after) * 0.985
-    fig.update_yaxes(range=[lo, max(before, after) * 1.004], tickprefix="$", tickformat=".3s")
+    lo = min(before, after) * 0.985 / 1e9
+    fig.update_yaxes(range=[lo, max(before, after) * 1.006 / 1e9], tickprefix="$", ticksuffix="bn", tickformat=".1f")
     return fig
 
 

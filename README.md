@@ -107,8 +107,9 @@ Optional real FinBERT sentiment: `pip install torch --index-url https://download
 
 ## 5. Key Results & Domain Impact
 
-All numbers below come from [`docs/results/results.md`](docs/results/results.md), produced by
-`make results` (lexicon sentiment backend, CPU).
+All numbers below come from [`docs/results/results.md`](docs/results/results.md) and
+[`docs/results/impact_report.json`](docs/results/impact_report.json), produced by `make impact` and
+`make results` (lexicon sentiment backend, CPU, real market data in `data/market/`).
 
 **The gate fires on real crises and holds on the fake.** Naive baseline: fire a stress test on
 any document with 10 x |sentiment| > 7.
@@ -126,14 +127,31 @@ any document with 10 x |sentiment| > 7.
   issuer's denial retracts it and unwinds its weight. A naive pipeline stress-tests the fake at once.
 - **Corroboration:** in the red-team pack 45 documents collapse into one story with 0 credible
   publishers; in SVB, 27 documents become 12 events with up to 8 independent owners.
-- **Module A (DeepSeek replay):** NVDA's weight is cut from 5.0% to 2.2% on Sunday at 11:22 ET,
-  22 hours before Monday's open, with 10.5% turnover versus 59.7% for the naive tilt.
+- **Module A (DeepSeek replay, real prices):** NVDA's weight is cut from 15.0% (its capped
+  benchmark weight) to 10.0% on Sunday at 11:22 ET, 22 hours before Monday's open. Trading at the
+  next open with 5 bp costs, the index's worst drawdown in the window is 2.76% versus 3.11% for the
+  benchmark, with 19% turnover against 180% for the naive tilt. It is a risk overlay, not an alpha
+  engine: in the SVB window it lagged the benchmark by 0.7 pp because the big banks it trimmed
+  recovered on deposit inflows.
+- **Impact is calibrated, not guessed.** On 3,145 real 8-K events (2015-2025) for the 20 names, the
+  event-study model predicts a two-sigma abnormal move with AUC 0.77 on the 2022-2023 test set
+  (hand-set 8-K severity ranking: 0.73), Brier 0.145 vs 0.166 for the base rate, and the top
+  impact decile moves 2.84 sigma on average against 0.75 for the bottom decile. Post-sample
+  (2024-2025): AUC 0.75 vs 0.69.
+- **Module B (shocks computed from real market data):**
+
+  | Trigger | Analog shock (selected) | CET1 | ECL | Breaches RBI 8% at |
+  | --- | --- | --- | --- | --- |
+  | SVB, impact 10, obligor in default | 2y UST -124 bp, regional banks -24.7%, HY +129 bp (Baa proxy) | 13.00% -> 12.16% | $73mn -> $292mn | 3.1x the SVB analog |
+  | Tariff shock, impact 9 | S&P 500 -12.1%, VIX +31 | 13.00% -> 10.87% | $73mn -> $212mn | 1.9x the tariff analog |
+  | DeepSeek, impact 8 | sector-specific, S&P 500 -1.4% | 13.00% -> 13.13% | unchanged | > 10x |
+
+![Module B stress result, SVB analog](docs/img/module-b.png)
+
 - **Gold set:** entity linking precision 1.00 vs 0.83 for exact alias matching ("Apple pie" does
   not become AAPL); entity-window sentiment 0.87 vs 0.76 for whole-document sentiment on
   two-company headlines.
 - **Latency:** about 1 ms per document on CPU, no LLM calls on the critical path.
-- **Module B and the impact calibration** need the public market data (`make data`, `make shocks`,
-  `make impact`); their tables are in Model Lab and `docs/results/` once run.
 
 ![Red team](docs/img/red-team.png)
 
