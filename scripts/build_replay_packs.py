@@ -269,7 +269,7 @@ QUIET = [
     news("2026-09-16T15:00:00Z", "tech-ledger.example", "Microsoft rolls out minor Azure pricing update for storage customers",
          "Microsoft adjusted storage pricing tiers for some Azure customers."),
     post("2026-09-16T15:40:00Z", "did:plc:syn-q-02", "$KO slow and steady as always"),
-    news("2026-09-16T16:05:00Z", "money-post.example", "Coca-Cola shares hit a record high as investors rotate into defensive names",
+    news("2026-09-16T16:05:00Z", "money-post.example", "Coca-Cola shares surge to a record high as investors rotate into defensive names",
          "Coca-Cola stock rose about 1% to a record as investors favoured steady consumer staples."),
     news("2026-09-16T16:30:00Z", "fin-daily.example", "Analyst raises price target on Eli Lilly, keeps rating unchanged",
          "An analyst nudged up a price target on Eli Lilly while keeping a neutral rating."),
