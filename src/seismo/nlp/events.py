@@ -11,7 +11,10 @@ from dataclasses import dataclass
 from seismo.schemas import Document, EventClass, EventLabel, SourceType
 
 E = EventClass
-METHOD = "rules-v0"
+METHOD = "rules-v1"
+# rules-v1 (after the GDELT real-news error analysis): bank-crisis vocabulary next to "bank"
+# ("bank ... panic / crisis / meltdown"), regulators closing or taking control of a bank, and
+# "shoring up capital". The rules-v0 results on real news are kept in docs/results for comparison.
 
 # 8-K item -> (class, subtype, severity rank). Rank picks the headline item in multi-item filings.
 ITEM_MAP: dict[str, tuple[EventClass, str, int]] = {
@@ -56,8 +59,10 @@ RULES: tuple[Rule, ...] = (
     _r(E.CREDIT_EVENT, "BANKRUPTCY", 3.0, r"\bbankrupt\w*|\bchapter 11\b|\breceivership\b|\binsolven\w*"),
     _r(E.CREDIT_EVENT, "DEFAULT", 3.0, r"\bdefault(?:ed|s)? on\b|\bmissed (?:a |an |its )?(?:coupon|interest|debt) payment"),
     _r(E.CREDIT_EVENT, "DOWNGRADE", 2.5, r"\b(?:credit )?rating (?:cut|downgrade)\b|\bdowngrade[sd]? (?:its |the )?(?:credit|debt|rating)\b|\bcut to junk\b|\bjunk status\b"),
-    _r(E.CREDIT_EVENT, "BANK_RUN", 3.0, r"\bbank run\b|\bdeposit (?:flight|outflows?|withdrawals?)\b|\b(?:pull|pulls|pulled|pulling|withdraw|withdrawing|withdrew|move|moving) (?:their |our |its )?(?:deposits|cash|money|funds)\b|\blimit(?:s|ing|ed)? withdrawals\b|\bhalt(?:s|ing|ed)? (?:customer )?withdrawals\b|\bwithdrawal limits?\b|\bbank (?:collapse|failure)s?\b|\bcollapses?\b.{0,40}\bbank\b|\bclosed by (?:\w+ )?regulators?\b|\bFDIC\b"),
-    _r(E.CREDIT_EVENT, "LIQUIDITY_STRESS", 2.0, r"\bliquidity (?:crisis|crunch|squeeze|fears?|concerns?)\b|\bcovenant breach\b|\bdebt restructuring\b|\bshore up (?:its )?(?:balance sheet|capital|finances)\b|\bemergency (?:capital|funding|lending|backstop)\b|\bcapital raise\b|\bbank failures?\b|\bcontagion\b"),
+    _r(E.CREDIT_EVENT, "BANK_RUN", 3.0, r"\bbank run\b|\bdeposit (?:flight|outflows?|withdrawals?)\b|\b(?:pull|pulls|pulled|pulling|withdraw|withdrawing|withdrew|move|moving) (?:their |our |its )?(?:deposits|cash|money|funds)\b|\blimit(?:s|ing|ed)? withdrawals\b|\bhalt(?:s|ing|ed)? (?:customer )?withdrawals\b|\bwithdrawal limits?\b|\bbank (?:collapse|failure)s?\b|\bcollapses?\b.{0,40}\bbank\b|\bclosed by (?:\w+ )?regulators?\b|\bFDIC\b"
+       r"|\bbanks?\b.{0,40}\b(?:panic|crisis|meltdown|collapse)\b|\b(?:panic|crisis|meltdown)\b.{0,40}\bbanks?\b"
+       r"|\b(?:shuts?|closes|seize[sd]?|takes? (?:control|over))\b.{0,30}\bbank\b"),
+    _r(E.CREDIT_EVENT, "LIQUIDITY_STRESS", 2.0, r"\bliquidity (?:crisis|crunch|squeeze|fears?|concerns?)\b|\bcovenant breach\b|\bdebt restructuring\b|\bshor(?:e|es|ing) up (?:its )?(?:balance sheet|capital|finances)\b|\bemergency (?:capital|funding|lending|backstop)\b|\bcapital raise\b|\bbank failures?\b|\bcontagion\b"),
     _r(E.GEOPOLITICAL, "TRADE_WAR", 2.5, r"\btariffs?\b|\btrade war\b|\bimport dut(?:y|ies)\b|\bretaliatory\b"),
     _r(E.GEOPOLITICAL, "SANCTIONS", 2.5, r"\bsanctions?\b|\bembargo\b|\bexport controls?\b"),
     _r(E.GEOPOLITICAL, "ARMED_CONFLICT", 3.0, r"(?<!trade )\bwar\b|\binvasion\b|\binvade[sd]?\b|\bmissiles?\b|\bairstrikes?\b|\bmilitary strikes?\b|\bceasefire\b"),

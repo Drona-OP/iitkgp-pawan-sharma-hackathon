@@ -1,0 +1,84 @@
+{
+  "dataset": "SEntFiN 1.0 (Sinha et al., 2023): Economic Times headlines with entity-level labels",
+  "file": "SEntFiN-v1.1.csv",
+  "pairs": 14345,
+  "headlines": 10709,
+  "label_mix": {
+    "neutral": 5487,
+    "positive": 5055,
+    "negative": 3803
+  },
+  "split": "80/20 by headline, seed 2026; C=8.0 by grouped 5-fold CV on train (macro-F1 0.7993)",
+  "test": {
+    "Lexicon, whole headline (naive)": {
+      "all": {
+        "accuracy": 0.6098,
+        "macro_f1": 0.608,
+        "n": 2947
+      },
+      "multi_entity": {
+        "accuracy": 0.572,
+        "macro_f1": 0.5619,
+        "n": 1437
+      },
+      "conflicting": {
+        "accuracy": 0.4567,
+        "macro_f1": 0.4563,
+        "n": 624
+      }
+    },
+    "Lexicon, entity window (Seismo v1)": {
+      "all": {
+        "accuracy": 0.5843,
+        "macro_f1": 0.5753,
+        "n": 2947
+      },
+      "multi_entity": {
+        "accuracy": 0.5331,
+        "macro_f1": 0.4984,
+        "n": 1437
+      },
+      "conflicting": {
+        "accuracy": 0.4856,
+        "macro_f1": 0.4688,
+        "n": 624
+      }
+    },
+    "Trained, no target masking (ablation)": {
+      "all": {
+        "accuracy": 0.7835,
+        "macro_f1": 0.7846,
+        "n": 2947
+      },
+      "multi_entity": {
+        "accuracy": 0.7182,
+        "macro_f1": 0.7188,
+        "n": 1437
+      },
+      "conflicting": {
+        "accuracy": 0.5016,
+        "macro_f1": 0.5081,
+        "n": 624
+      }
+    },
+    "Trained, target-masked (shipped)": {
+      "all": {
+        "accuracy": 0.8212,
+        "macro_f1": 0.8204,
+        "n": 2947
+      },
+      "multi_entity": {
+        "accuracy": 0.7975,
+        "macro_f1": 0.7923,
+        "n": 1437
+      },
+      "conflicting": {
+        "accuracy": 0.6955,
+        "macro_f1": 0.6912,
+        "n": 624
+      }
+    }
+  },
+  "published_reference": "SEntFiN paper, test set: finBERT and RoBERTa fine-tuned reach about 93-94% (GPU transformers); best lexicon + GBM about 85%.",
+  "version": "sentfin-target-lr-v1"
+}

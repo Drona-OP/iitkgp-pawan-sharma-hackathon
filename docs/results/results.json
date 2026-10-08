@@ -1,36 +1,46 @@
 {
-  "generated_at": "2026-10-08 21:26 UTC",
-  "sentiment_backend": "lexicon-v2",
+  "generated_at": "2026-10-08 23:11 UTC",
+  "sentiment_backend": "sentfin-target-lr-v1",
   "impact_model": "event-study-8k-v1",
   "scorecard": [
     {
       "Pack": "svb 2023",
       "Should trigger": "yes",
-      "Naive stress tests": 4,
-      "Seismo auto-triggers": 1,
-      "Held for review": 0,
+      "Naive stress tests": 9,
+      "Seismo auto-triggers": 3,
+      "Held for review": 1,
       "Retractions": 0,
-      "First trigger vs reference": "25.4 h before (regulators close SVB)",
+      "First trigger vs reference": "39.9 h before (regulators close SVB)",
       "Correct": "yes"
     },
     {
       "Pack": "deepseek 2025",
       "Should trigger": "yes",
-      "Naive stress tests": 4,
+      "Naive stress tests": 6,
       "Seismo auto-triggers": 1,
       "Held for review": 0,
       "Retractions": 0,
-      "First trigger vs reference": "3.2 h before (Monday open)",
+      "First trigger vs reference": "3.4 h before (Monday open)",
       "Correct": "yes"
     },
     {
       "Pack": "tariff 2025",
       "Should trigger": "yes",
-      "Naive stress tests": 3,
-      "Seismo auto-triggers": 2,
+      "Naive stress tests": 9,
+      "Seismo auto-triggers": 3,
+      "Held for review": 1,
+      "Retractions": 0,
+      "First trigger vs reference": "16.4 h before (first open after the announcement)",
+      "Correct": "yes"
+    },
+    {
+      "Pack": "adani 2023",
+      "Should trigger": "yes",
+      "Naive stress tests": 7,
+      "Seismo auto-triggers": 3,
       "Held for review": 0,
       "Retractions": 0,
-      "First trigger vs reference": "15.2 h before (first open after the announcement)",
+      "First trigger vs reference": "13.9 h before (first NSE open after the report)",
       "Correct": "yes"
     },
     {
@@ -46,7 +56,7 @@
     {
       "Pack": "quiet day",
       "Should trigger": "no",
-      "Naive stress tests": 1,
+      "Naive stress tests": 2,
       "Seismo auto-triggers": 0,
       "Held for review": 0,
       "Retractions": 0,
@@ -83,6 +93,15 @@
       "Coordinated groups": 0
     },
     {
+      "Pack": "adani 2023",
+      "Documents": 28,
+      "News/filing reports": 19,
+      "Social posts": 9,
+      "Stories (events)": 17,
+      "Max independent publishers": 5,
+      "Coordinated groups": 0
+    },
+    {
       "Pack": "red team",
       "Documents": 45,
       "News/filing reports": 3,
@@ -112,8 +131,8 @@
       {
         "Component": "Target sentiment",
         "Metric": "sign accuracy on 45 entity pairs",
-        "Naive baseline": "0.76 (whole-document score)",
-        "Seismo": "0.87 (entity-window score)"
+        "Naive baseline": "0.73 (whole-document score)",
+        "Seismo": "0.82 (entity-window score)"
       },
       {
         "Component": "Event class",
@@ -125,22 +144,22 @@
     "note": "50 author-labelled illustrative headlines in data/gold/headlines.jsonl, incl. ambiguous names and two-company headlines with opposite sentiment. Small and in-sample for the rules; read as a sanity check."
   },
   "latency": {
-    "documents": 124,
-    "engine_p50_ms": 0.79,
-    "engine_p95_ms": 1.63,
-    "docs_per_second": 1103.6,
+    "documents": 152,
+    "engine_p50_ms": 1.31,
+    "engine_p95_ms": 2.86,
+    "docs_per_second": 661.2,
     "llm_calls": 0
   },
   "module_a": {
     "svb_2023": {
-      "rebalances": 3,
-      "turnover": 0.2589,
-      "naive_turnover": 0.0965
+      "rebalances": 4,
+      "turnover": 0.2092,
+      "naive_turnover": 0.2331
     },
     "deepseek_2025": {
-      "rebalances": 3,
-      "turnover": 0.1897,
-      "naive_turnover": 1.8008,
+      "rebalances": 4,
+      "turnover": 0.3602,
+      "naive_turnover": 1.9244,
       "nvda_before_open": {
         "weight": 0.100418,
         "bench": 0.15,
@@ -149,9 +168,14 @@
       }
     },
     "tariff_2025": {
-      "rebalances": 4,
-      "turnover": 0.2053,
-      "naive_turnover": 0.794
+      "rebalances": 2,
+      "turnover": 0.1384,
+      "naive_turnover": 1.2085
+    },
+    "adani_2023": {
+      "rebalances": 0,
+      "turnover": 0.0,
+      "naive_turnover": 0.0
     },
     "red_team": {
       "rebalances": 0,
@@ -160,24 +184,48 @@
     },
     "quiet_day": {
       "rebalances": 4,
-      "turnover": 0.1609,
-      "naive_turnover": 0.0606
+      "turnover": 0.1885,
+      "naive_turnover": 0.2264
+    }
+  },
+  "module_a_in": {
+    "adani_2023": {
+      "rebalances": 4,
+      "turnover": 0.2703,
+      "naive_turnover": 1.8116,
+      "adani_before_open": {
+        "ADANIENT.NS": {
+          "weight": 0.0125,
+          "bench": 0.0625,
+          "first_cut": "2023-01-24T13:00:00+00:00",
+          "lead_vs_open": "14.8 h before",
+          "breaker": true
+        },
+        "ADANIPORTS.NS": {
+          "weight": 0.067612,
+          "bench": 0.0625,
+          "first_cut": "2023-01-25T10:20:00+00:00",
+          "lead_vs_open": "6.6 h after",
+          "breaker": false
+        }
+      }
     }
   },
   "module_a_deepseek_performance": {
     "Seismo": {
-      "return": 0.00777698024505602,
+      "return": 0.0016232254027046533,
       "max_drawdown": -0.027631675777195053
     },
     "Benchmark": {
-      "return": 0.006380825868425255,
+      "return": 0.0017808895839588335,
       "max_drawdown": -0.031145007160526372
     },
     "Naive tilt": {
-      "return": 0.006847350417737985,
-      "max_drawdown": -0.028277574879675416
+      "return": -0.005666828665136681,
+      "max_drawdown": -0.02453503057892592
     }
   },
+  "module_a_adani_performance": null,
   "module_b": {
     "svb_2023": [
       {
@@ -185,22 +233,33 @@
         "impact": 10,
         "epicenter": "SIVB",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.12162,
-        "ecl_before": 73116923.09,
-        "ecl_after": 291882752.77,
-        "reverse_m_rbi": 3.11,
-        "pre_tax_loss": 252236119.85
+        "cet1_ratio_after": 0.12389,
+        "ecl_before": 75577008.09,
+        "ecl_after": 294406681.1,
+        "reverse_m_rbi": 3.26,
+        "pre_tax_loss": 207584791.83
+      },
+      {
+        "scenario": "svb_2023",
+        "impact": 8,
+        "epicenter": "SIVB",
+        "cet1_ratio_before": 0.13,
+        "cet1_ratio_after": 0.12915,
+        "ecl_before": 75577008.09,
+        "ecl_after": 82702963.34,
+        "reverse_m_rbi": 4.76,
+        "pre_tax_loss": -2059948.18
       },
       {
         "scenario": "svb_2023",
         "impact": 9,
-        "epicenter": "SIVB",
+        "epicenter": "BAC",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.12921,
-        "ecl_before": 73116923.09,
-        "ecl_after": 83781830.63,
-        "reverse_m_rbi": 3.5,
-        "pre_tax_loss": 7867477.71
+        "cet1_ratio_after": 0.13007,
+        "ecl_before": 75577008.09,
+        "ecl_after": 80934733.11,
+        "reverse_m_rbi": 3.63,
+        "pre_tax_loss": 8739386.77
       }
     ],
     "deepseek_2025": [
@@ -209,61 +268,178 @@
         "impact": 8,
         "epicenter": "NVDA",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.13132,
-        "ecl_before": 73116923.09,
-        "ecl_after": 73327263.09,
+        "cet1_ratio_after": 0.13123,
+        "ecl_before": 75577008.09,
+        "ecl_after": 75787348.09,
         "reverse_m_rbi": null,
-        "pre_tax_loss": -43484387.53
+        "pre_tax_loss": -48102725.47
       },
       {
         "scenario": "deepseek_2025",
         "impact": 9,
         "epicenter": "NVDA",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.13183,
-        "ecl_before": 73116923.09,
-        "ecl_after": 73327263.09,
+        "cet1_ratio_after": 0.13169,
+        "ecl_before": 75577008.09,
+        "ecl_after": 75787348.09,
         "reverse_m_rbi": null,
-        "pre_tax_loss": -61235909.65
+        "pre_tax_loss": -67398645.13
       }
     ],
     "tariff_2025": [
       {
         "scenario": "tariff_2025",
         "impact": 9,
-        "epicenter": null,
-        "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.10873,
-        "ecl_before": 73116923.09,
-        "ecl_after": 211891681.89,
-        "reverse_m_rbi": 1.87,
-        "pre_tax_loss": 338358690.5
-      },
-      {
-        "scenario": "tariff_2025",
-        "impact": 8,
         "epicenter": "AAPL",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.11994,
-        "ecl_before": 73116923.09,
-        "ecl_after": 143553655.5,
-        "reverse_m_rbi": 2.41,
-        "pre_tax_loss": 222953669.38
+        "cet1_ratio_after": 0.1096,
+        "ecl_before": 75577008.09,
+        "ecl_after": 220015773.22,
+        "reverse_m_rbi": 1.89,
+        "pre_tax_loss": 362630831.77
+      },
+      {
+        "scenario": "tariff_2025",
+        "impact": 9,
+        "epicenter": null,
+        "cet1_ratio_before": 0.13,
+        "cet1_ratio_after": 0.10975,
+        "ecl_before": 75577008.09,
+        "ecl_after": 219992827.98,
+        "reverse_m_rbi": 1.93,
+        "pre_tax_loss": 359529695.57
       },
       {
         "scenario": "tariff_2025",
         "impact": 8,
         "epicenter": null,
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.12072,
-        "ecl_before": 73116923.09,
-        "ecl_after": 143540448.01,
-        "reverse_m_rbi": 2.5,
-        "pre_tax_loss": 219856522.65
+        "cet1_ratio_after": 0.12187,
+        "ecl_before": 75577008.09,
+        "ecl_after": 146807963.49,
+        "reverse_m_rbi": 2.58,
+        "pre_tax_loss": 232323313.04
+      }
+    ],
+    "adani_2023": [
+      {
+        "scenario": "adani_2023",
+        "impact": 8,
+        "epicenter": "ADANIENT.NS",
+        "cet1_ratio_before": 0.13,
+        "cet1_ratio_after": 0.12751,
+        "ecl_before": 75577008.09,
+        "ecl_after": 82569867.21,
+        "reverse_m_rbi": null,
+        "pre_tax_loss": 34992966.58
+      },
+      {
+        "scenario": "adani_2023",
+        "impact": 9,
+        "epicenter": "ADANIENT.NS",
+        "cet1_ratio_before": 0.13,
+        "cet1_ratio_after": 0.12751,
+        "ecl_before": 75577008.09,
+        "ecl_after": 82569867.21,
+        "reverse_m_rbi": null,
+        "pre_tax_loss": 34992966.58
+      },
+      {
+        "scenario": "adani_2023",
+        "impact": 10,
+        "epicenter": "ADANIENT.NS",
+        "cet1_ratio_before": 0.13,
+        "cet1_ratio_after": 0.12751,
+        "ecl_before": 75577008.09,
+        "ecl_after": 82569867.21,
+        "reverse_m_rbi": 9.37,
+        "pre_tax_loss": 34992966.58
       }
     ],
     "red_team": [],
     "quiet_day": []
+  },
+  "real_news": [
+    {
+      "Window": "svb 2023",
+      "Real articles": 45,
+      "Publishers": 32,
+      "Stories (events)": 5,
+      "Naive stress tests": 7,
+      "Seismo auto-triggers": 1,
+      "Held for review": 0,
+      "First trigger vs reference": "0.2 h before (regulators close SVB)",
+      "Correct": "yes"
+    },
+    {
+      "Window": "adani 2023",
+      "Real articles": 163,
+      "Publishers": 64,
+      "Stories (events)": 19,
+      "Naive stress tests": 47,
+      "Seismo auto-triggers": 1,
+      "Held for review": 1,
+      "First trigger vs reference": "5.5 h after (first NSE open after the report)",
+      "Correct": "yes"
+    },
+    {
+      "Window": "control 2024",
+      "Real articles": 816,
+      "Publishers": 495,
+      "Stories (events)": 59,
+      "Naive stress tests": 48,
+      "Seismo auto-triggers": 0,
+      "Held for review": 2,
+      "First trigger vs reference": "-",
+      "Correct": "yes"
+    }
+  ],
+  "sentiment_benchmark": {
+    "table": [
+      {
+        "System": "Lexicon, whole headline (naive)",
+        "Accuracy": "0.610",
+        "Macro-F1": "0.608",
+        "Macro-F1, multi-entity headlines": "0.562",
+        "Macro-F1, conflicting headlines": "0.456"
+      },
+      {
+        "System": "Lexicon, entity window (Seismo v1)",
+        "Accuracy": "0.584",
+        "Macro-F1": "0.575",
+        "Macro-F1, multi-entity headlines": "0.498",
+        "Macro-F1, conflicting headlines": "0.469"
+      },
+      {
+        "System": "Trained, no target masking (ablation)",
+        "Accuracy": "0.783",
+        "Macro-F1": "0.785",
+        "Macro-F1, multi-entity headlines": "0.719",
+        "Macro-F1, conflicting headlines": "0.508"
+      },
+      {
+        "System": "Trained, target-masked (shipped)",
+        "Accuracy": "0.821",
+        "Macro-F1": "0.820",
+        "Macro-F1, multi-entity headlines": "0.792",
+        "Macro-F1, conflicting headlines": "0.691"
+      }
+    ],
+    "note": "SEntFiN 1.0 (Sinha et al., 2023): Economic Times headlines with entity-level labels; 14345 entity pairs from 10709 headlines. 80/20 by headline, seed 2026; C=8.0 by grouped 5-fold CV on train (macro-F1 0.7993). Published reference: SEntFiN paper, test set: finBERT and RoBERTa fine-tuned reach about 93-94% (GPU transformers); best lexicon + GBM about 85%."
+  },
+  "real_news_first_triggers": {
+    "svb_2023_gdelt": {
+      "at": "2023-03-10T16:00:00+00:00",
+      "headline": "SVB CEO Becker Asks Silicon Valley Bank Clients to Stay Calm"
+    },
+    "adani_2023_gdelt": {
+      "at": "2023-01-25T09:15:00+00:00",
+      "headline": "Adani Stocks Drop after Hindenberg Accuses Firm of Manipulation and Fraud"
+    },
+    "control_2024_gdelt": {
+      "at": null,
+      "headline": null
+    }
   },
   "stress_inputs": "data/market/analog_shocks.csv"
 }

@@ -176,7 +176,7 @@ def main(argv: list[str]) -> int:
     # C by grouped 5-fold CV on the training part only.
     best_c, best = 1.0, -1.0
     gtrain = np.array([r["hid"] for r in train])
-    for C in (0.5, 1.0, 2.0, 4.0, 8.0):
+    for C in (1.0, 2.0, 4.0, 8.0, 16.0, 32.0):
         f1s = []
         for a, b in GroupKFold(n_splits=5).split(train, groups=gtrain):
             vec, clf = _fit([train[i] for i in a], True, C)

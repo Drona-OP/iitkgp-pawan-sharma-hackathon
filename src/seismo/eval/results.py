@@ -360,6 +360,11 @@ def to_markdown(out: dict) -> str:
          "publication by 15-30 minutes. First triggers: " + "; ".join(
              f"{k.replace('_gdelt', '')} at {v['at']} on \"{v['headline']}\"" for k, v in out.get("real_news_first_triggers", {}).items() if v["at"])
          + ".") if out.get("real_news") else "",
+        ("Out-of-sample note: these windows were first run with event rules-v0, which missed the SVB window "
+         "(0 auto-triggers: real headlines such as \"Silicon Valley Bank Startups Panic\" and \"California Regulator "
+         "Shuts Silicon Valley Bank\" fell into class OTHER). The error analysis added bank-crisis vocabulary "
+         "(rules-v1, seismo/nlp/events.py). The Adani and control results are identical under v0 and v1, so the SVB "
+         "row is no longer out-of-sample; the other two are.") if out.get("real_news") else "",
         "## Target sentiment on real labelled headlines (SEntFiN 1.0, held-out test)" if out.get("sentiment_benchmark") else "",
         _table(out["sentiment_benchmark"]["table"]) if out.get("sentiment_benchmark") else "",
         out["sentiment_benchmark"]["note"] if out.get("sentiment_benchmark") else "",
