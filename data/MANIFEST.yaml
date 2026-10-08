@@ -18,6 +18,48 @@ datasets:
   synthetic: true
   rows: 50
   sha256: 4515c465a39932628b704e3876ba99a3b5da71181c8f395b517fe0a4e7b0bb8e
+- path: data/market/analog_shocks.csv
+  source: Computed by `make shocks` from prices and FRED
+  licence: MIT
+  synthetic: false
+  rows: 189
+  sha256: 80dfdec7dcad64718194f5727b47a5af1bfbed311ca1ba9464559580f9e14068
+- path: data/market/caps.csv
+  source: Yahoo Finance via yfinance (scripts/fetch_data.py)
+  licence: Yahoo terms; research use
+  synthetic: false
+  rows: 20
+  sha256: a9734c7e18aea470dc937af5c27babdc85e69d547014526f5807727bee830008
+- path: data/market/edgar_8k.csv
+  source: SEC EDGAR submissions API (scripts/fetch_data.py)
+  licence: US government public data
+  synthetic: false
+  rows: 6170
+  sha256: 45a5ecdb9ed43029f8a5958d023912fdebdab2b7ab713f092967b588e6b77a06
+- path: data/market/fred_daily.csv
+  source: FRED, Federal Reserve Bank of St. Louis (scripts/fetch_data.py)
+  licence: Public; cite FRED
+  synthetic: false
+  rows: 5168
+  sha256: 055d4ef7a63f692477342d6c934077dd275166c5379a3c0682a586aa950dd884
+- path: data/market/impact_events.csv
+  source: Computed by `make impact` (8-K event study)
+  licence: MIT
+  synthetic: false
+  rows: 5110
+  sha256: f33b7e7162a18285f9d0275fd194f3c2f48583622d9d4791f26daae340223532
+- path: data/market/prices_daily.csv
+  source: Yahoo Finance via yfinance (scripts/fetch_data.py)
+  licence: Yahoo terms; research use
+  synthetic: false
+  rows: 5155
+  sha256: 300d5b3254c0b895947b82c0eb9df41022e0eb627521b5eac7b2f52c58578391
+- path: data/market/prices_open.csv
+  source: Yahoo Finance via yfinance (scripts/fetch_data.py)
+  licence: Yahoo terms; research use
+  synthetic: false
+  rows: 2024
+  sha256: fb9d58794cfbe81d4adc054b3357e9dd6c7b387d1f751f105fed43b76282d446
 - path: data/replay/deepseek_2025.jsonl
   source: 'Author: paraphrased reconstruction of public reporting'
   licence: MIT

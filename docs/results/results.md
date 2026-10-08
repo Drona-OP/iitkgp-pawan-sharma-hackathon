@@ -1,6 +1,6 @@
-# Seismo results (generated 2026-10-08 12:46 UTC)
+# Seismo results (generated 2026-10-08 21:26 UTC)
 
-Sentiment backend `lexicon-v2`, impact model `logit-prior-v1`. Regenerate with `make results`.
+Sentiment backend `lexicon-v2`, impact model `event-study-8k-v1`. Regenerate with `make results`.
 
 ## Replay scorecard: gated vs naive trigger
 
@@ -36,8 +36,22 @@ Sentiment backend `lexicon-v2`, impact model `logit-prior-v1`. Regenerate with `
 
 | documents | engine_p50_ms | engine_p95_ms | docs_per_second | llm_calls |
 | --- | --- | --- | --- | --- |
-| 124 | 0.91 | 1.74 | 1019.4 | 0 |
+| 124 | 0.79 | 1.63 | 1103.6 | 0 |
 
 ## Module A (DeepSeek replay)
 
-NVDA first cut at 2025-01-26T16:22:00+00:00 (22.1 h before the Monday open); weight before the open 2.20% vs benchmark 5.00%. Turnover 10.5% vs naive tilt 59.7%.
+NVDA first cut at 2025-01-26T16:22:00+00:00 (22.1 h before the Monday open); weight before the open 10.04% vs benchmark 15.00%. Turnover 19.0% vs naive tilt 180.1%.
+
+| Portfolio | Return | Max drawdown |
+| --- | --- | --- |
+| Seismo | +0.78% | -2.76% |
+| Benchmark | +0.64% | -3.11% |
+| Naive tilt | +0.68% | -2.83% |
+
+## Module B (most severe auto-triggered stress run per pack)
+
+| Pack | Analog | Impact | Obligor | CET1 before | CET1 after | ECL | Breaches 8% at |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| svb_2023 | svb_2023 | 10 | SIVB | 13.00% | 12.16% | $73mn -> $292mn | 3.11x |
+| deepseek_2025 | deepseek_2025 | 8 | NVDA | 13.00% | 13.13% | $73mn -> $73mn | > 10x |
+| tariff_2025 | tariff_2025 | 9 | - | 13.00% | 10.87% | $73mn -> $212mn | 1.87x |

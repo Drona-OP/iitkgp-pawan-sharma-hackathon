@@ -16,7 +16,9 @@ from seismo.module_a.market import closes, opens
 
 
 def _sessions(px: pd.DataFrame, start: pd.Timestamp, end: pd.Timestamp) -> pd.DatetimeIndex:
-    return px.index[(px.index >= start.normalize()) & (px.index <= end.normalize())]
+    """US equity sessions only (rows where SPY traded; FX and futures also print on US holidays)."""
+    traded = px["SPY"].notna() if "SPY" in px.columns else px.notna().any(axis=1)
+    return px.index[traded & (px.index >= start.normalize()) & (px.index <= end.normalize())]
 
 
 def replay_performance(snapshots: list[dict], market_dir: Path, cost_bps: float = 5.0,
@@ -33,7 +35,7 @@ def replay_performance(snapshots: list[dict], market_dir: Path, cost_bps: float 
     tickers = list(snapshots[0]["bench"])
     if len(days) < 2 or not set(tickers) <= set(px_c.columns):
         return None
-    close = px_c.loc[days, tickers]
+    close = px_c.loc[days, tickers].ffill()
     open_ = px_o.loc[px_o.index.intersection(days), tickers].reindex(days) if px_o is not None else None
 
     def effective(day: pd.Timestamp, key: str) -> tuple[dict, int]:

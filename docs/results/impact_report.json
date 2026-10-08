@@ -1,0 +1,306 @@
+{
+  "report": {
+    "train": {
+      "set": "train 2015-2020",
+      "n": 1687,
+      "positives": 298,
+      "base_rate": 0.1766,
+      "auc": 0.7807,
+      "auc_rule_rank": 0.7088,
+      "brier": 0.1322,
+      "brier_base_rate": 0.1454,
+      "spearman_impact_abs_scar": 0.0451,
+      "top_decile_abs_scar": 2.597,
+      "bottom_decile_abs_scar": 0.631,
+      "reliability": [
+        {
+          "bin": "0.0-0.1",
+          "n": 1198,
+          "predicted": 0.0527,
+          "observed": 0.0818
+        },
+        {
+          "bin": "0.1-0.2",
+          "n": 223,
+          "predicted": 0.1274,
+          "observed": 0.3363
+        },
+        {
+          "bin": "0.2-0.3",
+          "n": 62,
+          "predicted": 0.2164,
+          "observed": 0.3065
+        },
+        {
+          "bin": "0.3-0.4",
+          "n": 76,
+          "predicted": 0.3351,
+          "observed": 0.4474
+        },
+        {
+          "bin": "0.4-0.5",
+          "n": 10,
+          "predicted": 0.4428,
+          "observed": 0.8
+        },
+        {
+          "bin": "0.5-0.6",
+          "n": 34,
+          "predicted": 0.5026,
+          "observed": 0.4706
+        },
+        {
+          "bin": "0.6-0.7",
+          "n": 26,
+          "predicted": 0.665,
+          "observed": 0.5
+        },
+        {
+          "bin": "0.7-0.8",
+          "n": 1,
+          "predicted": 0.7528,
+          "observed": 0.0
+        },
+        {
+          "bin": "0.8-0.9",
+          "n": 3,
+          "predicted": 0.8586,
+          "observed": 0.6667
+        },
+        {
+          "bin": "0.9-1.0",
+          "n": 54,
+          "predicted": 0.999,
+          "observed": 0.6111
+        }
+      ]
+    },
+    "valid": {
+      "set": "valid 2021",
+      "n": 287,
+      "positives": 25,
+      "base_rate": 0.0871,
+      "auc": 0.7934,
+      "auc_rule_rank": 0.6339,
+      "brier": 0.064,
+      "brier_base_rate": 0.0875,
+      "spearman_impact_abs_scar": -0.3408,
+      "top_decile_abs_scar": 1.635,
+      "bottom_decile_abs_scar": 0.492,
+      "reliability": [
+        {
+          "bin": "0.0-0.1",
+          "n": 218,
+          "predicted": 0.0414,
+          "observed": 0.0413
+        },
+        {
+          "bin": "0.1-0.2",
+          "n": 39,
+          "predicted": 0.1282,
+          "observed": 0.1282
+        },
+        {
+          "bin": "0.2-0.3",
+          "n": 14,
+          "predicted": 0.2143,
+          "observed": 0.2143
+        },
+        {
+          "bin": "0.3-0.4",
+          "n": 9,
+          "predicted": 0.3333,
+          "observed": 0.3333
+        },
+        {
+          "bin": "0.5-0.6",
+          "n": 2,
+          "predicted": 0.5,
+          "observed": 0.5
+        },
+        {
+          "bin": "0.6-0.7",
+          "n": 3,
+          "predicted": 0.6667,
+          "observed": 0.6667
+        },
+        {
+          "bin": "0.9-1.0",
+          "n": 2,
+          "predicted": 0.999,
+          "observed": 1.0
+        }
+      ]
+    },
+    "test": {
+      "set": "test 2022-2023",
+      "n": 471,
+      "positives": 98,
+      "base_rate": 0.2081,
+      "auc": 0.7672,
+      "auc_rule_rank": 0.7343,
+      "brier": 0.1451,
+      "brier_base_rate": 0.1658,
+      "spearman_impact_abs_scar": -0.2635,
+      "top_decile_abs_scar": 2.844,
+      "bottom_decile_abs_scar": 0.746,
+      "reliability": [
+        {
+          "bin": "0.0-0.1",
+          "n": 314,
+          "predicted": 0.058,
+          "observed": 0.0987
+        },
+        {
+          "bin": "0.1-0.2",
+          "n": 47,
+          "predicted": 0.1301,
+          "observed": 0.383
+        },
+        {
+          "bin": "0.2-0.3",
+          "n": 20,
+          "predicted": 0.2143,
+          "observed": 0.25
+        },
+        {
+          "bin": "0.3-0.4",
+          "n": 32,
+          "predicted": 0.336,
+          "observed": 0.2188
+        },
+        {
+          "bin": "0.4-0.5",
+          "n": 5,
+          "predicted": 0.4494,
+          "observed": 0.8
+        },
+        {
+          "bin": "0.5-0.6",
+          "n": 11,
+          "predicted": 0.5,
+          "observed": 0.8182
+        },
+        {
+          "bin": "0.6-0.7",
+          "n": 20,
+          "predicted": 0.6667,
+          "observed": 0.4
+        },
+        {
+          "bin": "0.9-1.0",
+          "n": 22,
+          "predicted": 0.9982,
+          "observed": 0.7273
+        }
+      ]
+    },
+    "post": {
+      "set": "post-sample 2024+",
+      "n": 700,
+      "positives": 128,
+      "base_rate": 0.1829,
+      "auc": 0.7494,
+      "auc_rule_rank": 0.6863,
+      "brier": 0.1428,
+      "brier_base_rate": 0.1495,
+      "spearman_impact_abs_scar": 0.0506,
+      "top_decile_abs_scar": 2.539,
+      "bottom_decile_abs_scar": 0.698,
+      "reliability": [
+        {
+          "bin": "0.0-0.1",
+          "n": 477,
+          "predicted": 0.0513,
+          "observed": 0.0881
+        },
+        {
+          "bin": "0.1-0.2",
+          "n": 99,
+          "predicted": 0.1275,
+          "observed": 0.3333
+        },
+        {
+          "bin": "0.2-0.3",
+          "n": 33,
+          "predicted": 0.2156,
+          "observed": 0.2727
+        },
+        {
+          "bin": "0.3-0.4",
+          "n": 34,
+          "predicted": 0.3349,
+          "observed": 0.4118
+        },
+        {
+          "bin": "0.4-0.5",
+          "n": 4,
+          "predicted": 0.457,
+          "observed": 0.25
+        },
+        {
+          "bin": "0.5-0.6",
+          "n": 13,
+          "predicted": 0.5,
+          "observed": 0.6923
+        },
+        {
+          "bin": "0.6-0.7",
+          "n": 23,
+          "predicted": 0.6667,
+          "observed": 0.5652
+        },
+        {
+          "bin": "0.9-1.0",
+          "n": 17,
+          "predicted": 0.999,
+          "observed": 0.4118
+        }
+      ]
+    }
+  },
+  "by_class": [
+    {
+      "cls": "CREDIT_EVENT",
+      "n": 1,
+      "two_sigma_rate": 0.0,
+      "mean_abs_scar": 0.0547
+    },
+    {
+      "cls": "EARNINGS_GUIDANCE",
+      "n": 1482,
+      "two_sigma_rate": 0.359,
+      "mean_abs_scar": 1.8927
+    },
+    {
+      "cls": "LEGAL_REGULATORY",
+      "n": 5,
+      "two_sigma_rate": 0.4,
+      "mean_abs_scar": 1.3312
+    },
+    {
+      "cls": "MANAGEMENT_GOVERNANCE",
+      "n": 838,
+      "two_sigma_rate": 0.0668,
+      "mean_abs_scar": 0.7802
+    },
+    {
+      "cls": "MA_CORPORATE_ACTION",
+      "n": 336,
+      "two_sigma_rate": 0.0536,
+      "mean_abs_scar": 0.7835
+    },
+    {
+      "cls": "OPERATIONAL_ESG",
+      "n": 9,
+      "two_sigma_rate": 0.1111,
+      "mean_abs_scar": 0.965
+    },
+    {
+      "cls": "OTHER",
+      "n": 2439,
+      "two_sigma_rate": 0.0914,
+      "mean_abs_scar": 0.8761
+    }
+  ]
+}
