@@ -25,7 +25,7 @@ scenarios:
     captures: "Extreme spread widening, deep equity losses"
   rate_shock_2022:
     label: "Hot CPI and a 75 bp hike"
-    start: 2022-06-10
+    start: 2022-06-09        # base is the close before the 10 June CPI print
     end: 2022-06-16
     captures: "Curve shifts up, equities fall"
   covid_2020:
@@ -62,9 +62,15 @@ severity:
 
 # Idiosyncratic overlay for the obligor or sector at the centre of the event.
 idiosyncratic:
-  CREDIT_EVENT: {notches: 3, equity_shock: -0.5}
+  CREDIT_EVENT: {notches: 3, equity_shock: -0.5, spread_bp_per_notch: 75, default_min_impact: 9}
   PRODUCT_STRATEGY: {notches: 1, equity_shock: -0.15}
   default: {notches: 1, equity_shock: -0.1}
+
+# Subtypes where the obligor at the centre is assumed to default at or above default_min_impact.
+default_subtypes: [BANK_RUN, BANKRUPTCY, DEFAULT, ACCELERATION_TRIGGER]
+
+# Same-sector obligors (contagion) take this share of the idiosyncratic notches, rounded to the nearest notch.
+contagion_share: 0.34
 
 # Probability weights for the multi-scenario ECL (RBI-style base / adverse / severe).
 ecl_weights: {base: 0.5, adverse: 0.3, severe: 0.2}

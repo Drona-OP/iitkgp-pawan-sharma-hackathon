@@ -7,6 +7,7 @@
 
 Writes small CSVs to data/market/ (a few MB in total, safe to commit):
 
+    prices_open.csv    adjusted opens since 2019 (for trade-at-next-open replays)
     prices_daily.csv   adjusted closes: 20 universe names, SPY, 11 sector ETFs, KRE, credit ETFs,
                        VIX, Brent, gold, dollar index, USD/INR, EUR/USD (Yahoo Finance via yfinance)
     fred_daily.csv     Treasury curve (3m, 2y, 5y, 10y, 30y), Moody's Baa/Aaa - 10y spreads,
@@ -102,6 +103,13 @@ def fetch_prices() -> None:
     close.index.name = "date"
     close.round(6).to_csv(OUT / "prices_daily.csv")
     print(f"[prices] wrote {len(close)} rows x {close.shape[1]} columns")
+    if isinstance(raw.columns, pd.MultiIndex) and "Open" in raw.columns.get_level_values(0):
+        opens = raw["Open"].rename(columns=YAHOO_FACTORS)
+        opens.index = pd.to_datetime(opens.index).tz_localize(None).normalize()
+        opens = opens.sort_index().loc["2019-01-01":].dropna(how="all")  # opens only for replay windows
+        opens.index.name = "date"
+        opens.round(6).to_csv(OUT / "prices_open.csv")
+        print(f"[prices] wrote opens: {len(opens)} rows")
 
 
 def fetch_caps() -> None:

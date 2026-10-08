@@ -30,6 +30,8 @@ class ScenarioLibrary:
     vasicek_z: dict[int, float]
     idiosyncratic: dict[str, dict[str, float]]
     ecl_weights: dict[str, float]
+    default_subtypes: tuple[str, ...] = ()
+    contagion_share: float = 0.34
 
     def multiplier(self, impact: int) -> float:
         keys = sorted(self.severity_multiplier)
@@ -67,6 +69,8 @@ def load_library(path: str | Path) -> ScenarioLibrary:
         vasicek_z={int(k): float(v) for k, v in sev.get("vasicek_z", {8: -1.5, 9: -2.0, 10: -2.33}).items()},
         idiosyncratic={k: dict(v) for k, v in raw.get("idiosyncratic", {}).items()},
         ecl_weights={k: float(v) for k, v in raw.get("ecl_weights", {"base": 0.5, "adverse": 0.3, "severe": 0.2}).items()},
+        default_subtypes=tuple(raw.get("default_subtypes", [])),
+        contagion_share=float(raw.get("contagion_share", 0.34)),
     )
 
 
