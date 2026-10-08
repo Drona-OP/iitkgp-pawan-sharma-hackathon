@@ -64,7 +64,7 @@ FRED_SERIES = {
     "DCOILBRENTEU": "BRENT_FRED",
     "DEXINUS": "USDINR_FRED",
 }
-FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}"
+FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}&cosd=2007-01-01"
 SEC_SUBMISSIONS = "https://data.sec.gov/submissions/{name}"
 
 
@@ -73,8 +73,26 @@ def universe_rows() -> list[dict[str, str]]:
         return list(csv.DictReader(fh))
 
 
-def _get(url: str, headers: dict[str, str] | None = None, tries: int = 5, timeout: int = 90) -> bytes:
+def _get(url: str, headers: dict[str, str] | None = None, tries: int = 5, timeout: int = 90,
+         browser: bool = False) -> bytes:
+    """GET with retries. browser=True uses curl_cffi (installed with yfinance) to present a real
+    Chrome TLS fingerprint, which sites behind bot protection such as FRED accept."""
     last: Exception | None = None
+    if browser:
+        try:
+            from curl_cffi import requests as creq
+
+            for attempt in range(tries):
+                try:
+                    r = creq.get(url, impersonate="chrome", timeout=timeout)
+                    if r.status_code == 200 and r.content:
+                        return r.content
+                    last = RuntimeError(f"HTTP {r.status_code}")
+                except Exception as exc:  # noqa: BLE001
+                    last = exc
+                time.sleep(3 * (attempt + 1))
+        except ImportError:
+            pass
     for attempt in range(tries):
         try:
             req = urllib.request.Request(url, headers=headers or {"User-Agent": "Mozilla/5.0"})
@@ -236,7 +254,7 @@ def fetch_fred() -> None:
             print(f"[fred] {sid:14s} already saved")
             continue
         try:
-            raw = _get(FRED_URL.format(sid=sid)).decode("utf-8")
+            raw = _get(FRED_URL.format(sid=sid), tries=3, browser=True).decode("utf-8")
         except RuntimeError as exc:
             print(f"[fred] {sid}: {exc}")
             failed.append(sid)
