@@ -1,0 +1,52 @@
+# Gold set written for this repository: 50 illustrative headlines (not real news), labelled by the author.
+# entities: ticker -> target sentiment (-1, 0, +1); event: primary class. Used by `make results`.
+{"text": "Apple pie recipes for a long weekend with the family", "entities": {}, "event": "OTHER"}
+{"text": "Amazon rainforest fires reach a ten-year high, satellite data show", "entities": {}, "event": "OTHER"}
+{"text": "Meta-analysis finds walking improves sleep quality", "entities": {}, "event": "OTHER"}
+{"text": "How to clean your windows without leaving streaks", "entities": {}, "event": "OTHER"}
+{"text": "Police chase ends after a two-hour pursuit on the interstate", "entities": {}, "event": "OTHER"}
+{"text": "A caterpillar becomes a butterfly: a children's science guide", "entities": {}, "event": "OTHER"}
+{"text": "Lilly and her friends open a bakery downtown", "entities": {}, "event": "OTHER"}
+{"text": "Apple shares fall after iPhone sales miss estimates in China", "entities": {"AAPL": -1}, "event": "EARNINGS_GUIDANCE"}
+{"text": "Amazon raises its outlook as cloud revenue at AWS accelerates", "entities": {"AMZN": 1}, "event": "EARNINGS_GUIDANCE"}
+{"text": "Meta shares jump after strong advertising growth on Instagram", "entities": {"META": 1}, "event": "EARNINGS_GUIDANCE"}
+{"text": "Microsoft gains cloud share as Google loses a major government contract", "entities": {"MSFT": 1, "GOOGL": -1}, "event": "OTHER"}
+{"text": "Exxon Mobil beats estimates while Chevron misses on weaker refining margins", "entities": {"XOM": 1, "CVX": -1}, "event": "EARNINGS_GUIDANCE"}
+{"text": "Tesla recalls 200,000 vehicles over a braking software fault", "entities": {"TSLA": -1}, "event": "PRODUCT_STRATEGY"}
+{"text": "Boeing faces a new FAA investigation after a 737 MAX incident", "entities": {"BA": -1}, "event": "LEGAL_REGULATORY"}
+{"text": "Eli Lilly wins FDA approval for its new obesity drug", "entities": {"LLY": 1}, "event": "LEGAL_REGULATORY"}
+{"text": "UnitedHealth shares plunge as the DOJ opens a probe into billing practices", "entities": {"UNH": -1}, "event": "LEGAL_REGULATORY"}
+{"text": "JPMorgan to acquire a regional lender in a $10 billion deal", "entities": {"JPM": 0}, "event": "MA_CORPORATE_ACTION"}
+{"text": "Bank of America announces a $25 billion share buyback and higher dividend", "entities": {"BAC": 1}, "event": "MA_CORPORATE_ACTION"}
+{"text": "Nvidia unveils a new data centre chip at its developer conference", "entities": {"NVDA": 1}, "event": "PRODUCT_STRATEGY"}
+{"text": "Nvidia shares slide as a rival releases a cheaper AI model", "entities": {"NVDA": -1}, "event": "PRODUCT_STRATEGY"}
+{"text": "Procter & Gamble cuts its sales forecast on weak demand in Europe", "entities": {"PG": -1}, "event": "EARNINGS_GUIDANCE"}
+{"text": "Coca-Cola raises prices as input costs climb", "entities": {"KO": 0}, "event": "OTHER"}
+{"text": "Caterpillar reports record quarterly profit on mining equipment demand", "entities": {"CAT": 1}, "event": "EARNINGS_GUIDANCE"}
+{"text": "NextEra Energy shares drop after a regulator rejects a rate increase", "entities": {"NEE": -1}, "event": "LEGAL_REGULATORY"}
+{"text": "Linde signs a long-term hydrogen supply partnership", "entities": {"LIN": 1}, "event": "PRODUCT_STRATEGY"}
+{"text": "American Tower CEO to step down at year end", "entities": {"AMT": 0}, "event": "MANAGEMENT_GOVERNANCE"}
+{"text": "Alphabet faces an antitrust lawsuit over its advertising business", "entities": {"GOOGL": -1}, "event": "LEGAL_REGULATORY"}
+{"text": "Google parent Alphabet beats revenue expectations; YouTube ads surge", "entities": {"GOOGL": 1}, "event": "EARNINGS_GUIDANCE"}
+{"text": "Hackers breach UnitedHealth's Optum unit, disrupting pharmacy payments", "entities": {"UNH": -1}, "event": "OPERATIONAL_ESG"}
+{"text": "Boeing machinists strike, halting 737 production", "entities": {"BA": -1}, "event": "OPERATIONAL_ESG"}
+{"text": "Chevron agrees to buy a shale producer for $50 billion", "entities": {"CVX": 0}, "event": "MA_CORPORATE_ACTION"}
+{"text": "Apple and Microsoft rally as investors rotate back into tech", "entities": {"AAPL": 1, "MSFT": 1}, "event": "OTHER"}
+{"text": "Tesla slumps while Amazon climbs after mixed results from big tech", "entities": {"TSLA": -1, "AMZN": 1}, "event": "EARNINGS_GUIDANCE"}
+{"text": "Federal Reserve raises interest rates by 75 basis points to fight inflation", "entities": {"MACRO:FED": -1}, "event": "MACROECONOMIC"}
+{"text": "OPEC+ agrees to deeper output cuts, sending crude oil prices higher", "entities": {"MACRO:OPEC": 0, "MACRO:OIL": 1}, "event": "MACROECONOMIC"}
+{"text": "Missile strikes escalate the conflict and rattle global markets", "entities": {"MACRO:MARKET": -1}, "event": "GEOPOLITICAL"}
+{"text": "US announces new tariffs on imports from China; Wall Street falls", "entities": {"MACRO:MARKET": -1}, "event": "GEOPOLITICAL"}
+{"text": "Reserve Bank of India holds the repo rate steady", "entities": {"MACRO:RBI": 0}, "event": "MACROECONOMIC"}
+{"text": "Bank of America denies reports of liquidity problems; says deposits are stable", "entities": {"BAC": 1}, "event": "CREDIT_EVENT"}
+{"text": "JPMorgan shares fall as credit card defaults rise", "entities": {"JPM": -1}, "event": "CREDIT_EVENT"}
+{"text": "Moody's downgrades its credit rating on a regional bank to junk", "entities": {}, "event": "CREDIT_EVENT"}
+{"text": "Exxon reports an oil spill at a Gulf platform; cleanup under way", "entities": {"XOM": -1}, "event": "OPERATIONAL_ESG"}
+{"text": "Meta Platforms fined by EU regulators over data transfers", "entities": {"META": -1}, "event": "LEGAL_REGULATORY"}
+{"text": "Analysts upgrade Coca-Cola to buy on resilient volumes", "entities": {"KO": 1}, "event": "EARNINGS_GUIDANCE"}
+{"text": "Procter and Gamble names a new chief executive", "entities": {"PG": 0}, "event": "MANAGEMENT_GOVERNANCE"}
+{"text": "$NVDA ripping today, best day in months", "entities": {"NVDA": 1}, "event": "OTHER"}
+{"text": "$TSLA getting crushed, sell everything", "entities": {"TSLA": -1}, "event": "OTHER"}
+{"text": "Eli Lilly cuts its revenue guidance after weaker Mounjaro sales", "entities": {"LLY": -1}, "event": "EARNINGS_GUIDANCE"}
+{"text": "American Tower expands in India with a tower portfolio acquisition", "entities": {"AMT": 1}, "event": "MA_CORPORATE_ACTION"}
+{"text": "Caterpillar recalls engines in some excavator models", "entities": {"CAT": -1}, "event": "PRODUCT_STRATEGY"}

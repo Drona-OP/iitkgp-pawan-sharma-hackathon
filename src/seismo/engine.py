@@ -112,7 +112,10 @@ class Engine:
         if not mentions:
             return EngineResult()
 
-        windows = [entity_windows(doc, m) for m in mentions]
+        windows = [
+            entity_windows(doc, m, others=[sp for o in mentions if o.entity_id != m.entity_id for sp in o.spans])
+            for m in mentions
+        ]
         flat = [text[s:e] for ws in windows for s, e in ws]
         probs = self.backend.predict(flat)
         cred = credibility(doc.publisher, doc.source_type, doc.author)

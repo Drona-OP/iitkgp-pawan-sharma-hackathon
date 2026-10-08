@@ -60,8 +60,8 @@ bluesky:
   max_posts_per_author_hour: 5
 
 replay:
-  default_pack: data/replay/demo_synthetic.jsonl
-  speed: 600
+  default_pack: data/replay/deepseek_2025.jsonl
+  speed: 3600
   max_gap_seconds: 2.0
 
 api:

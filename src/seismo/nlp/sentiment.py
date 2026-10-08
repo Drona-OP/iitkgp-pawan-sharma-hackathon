@@ -90,7 +90,7 @@ EXTRA_POSITIVE = frozenset(
         "soar", "soaring", "rallied", "ripping", "jumped", "best", "recover", "protected",
         "backstop", "inflows", "rebounds", "rebounded", "beats", "upbeat", "reassures",
         "reassured", "accelerates", "accelerating", "record-high", "approval", "eases", "eased",
-        "easing", "pause", "relief",
+        "easing", "pause", "relief", "climb", "climbs", "climbed", "climbing",
     }
 )
 POSITIVE = POSITIVE | EXTRA_POSITIVE
@@ -198,12 +198,44 @@ def make_backend(kind: str = "auto", model_name: str = "ProsusAI/finbert") -> Se
         return LexiconBackend()
 
 
-def entity_windows(doc: Document, mention: EntityMention, limit: int = 3) -> list[tuple[int, int]]:
-    """Character ranges of the sentences that mention the entity (title counts as a sentence)."""
+CLAUSE_RE = re.compile(r"\s+(?:while|whereas|as|but|after|even as)\s+|\s*[;,]\s+(?:while|as|but)?\s*", re.IGNORECASE)
+
+
+def _clauses(text: str, start: int, end: int) -> list[tuple[int, int]]:
+    out, cursor = [], start
+    for m in CLAUSE_RE.finditer(text, start, end):
+        if m.start() > cursor:
+            out.append((cursor, m.start()))
+        cursor = m.end()
+    if cursor < end:
+        out.append((cursor, end))
+    return out or [(start, end)]
+
+
+def entity_windows(
+    doc: Document, mention: EntityMention, limit: int = 3, others: list[tuple[int, int]] | None = None
+) -> list[tuple[int, int]]:
+    """Character ranges of the sentences that mention the entity (title counts as a sentence).
+
+    When a sentence also names another entity ("Microsoft gains as Google loses"), the window
+    shrinks to the clause holding this entity, so each company gets its own sentiment.
+    """
     text = doc.text
     sentences = [(m.start(), m.end()) for m in SENTENCE_RE.finditer(text) if m.group().strip()]
     starts = [s for s, _ in mention.spans]
-    chosen = [(s, e) for s, e in sentences if any(s <= p < e for p in starts)]
+    others = others or []
+    chosen: list[tuple[int, int]] = []
+    for s, e in sentences:
+        if not any(s <= p < e for p in starts):
+            continue
+        if any(s <= o < e for o, _ in others):
+            clauses = _clauses(text, s, e)
+            mine = [(a, b) for a, b in clauses if any(a <= p < b for p in starts)]
+            theirs = {(a, b) for a, b in clauses if any(a <= o < b for o, _ in others)}
+            mine = [c for c in mine if c not in theirs] or mine
+            chosen.extend(mine or [(s, e)])
+        else:
+            chosen.append((s, e))
     if not chosen:
         chosen = sentences[:1] or [(0, len(text))]
     return chosen[:limit]

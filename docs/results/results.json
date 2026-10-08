@@ -1,0 +1,256 @@
+{
+  "generated_at": "2026-10-08 12:41 UTC",
+  "sentiment_backend": "lexicon-v2",
+  "impact_model": "logit-prior-v1",
+  "scorecard": [
+    {
+      "Pack": "svb 2023",
+      "Should trigger": "yes",
+      "Naive stress tests": 4,
+      "Seismo auto-triggers": 1,
+      "Held for review": 0,
+      "Retractions": 0,
+      "First trigger vs reference": "+25.4 h (regulators close SVB)",
+      "Correct": "yes"
+    },
+    {
+      "Pack": "deepseek 2025",
+      "Should trigger": "yes",
+      "Naive stress tests": 4,
+      "Seismo auto-triggers": 1,
+      "Held for review": 0,
+      "Retractions": 0,
+      "First trigger vs reference": "+3.2 h (Monday open)",
+      "Correct": "yes"
+    },
+    {
+      "Pack": "tariff 2025",
+      "Should trigger": "yes",
+      "Naive stress tests": 3,
+      "Seismo auto-triggers": 2,
+      "Held for review": 0,
+      "Retractions": 0,
+      "First trigger vs reference": "+15.2 h (first open after the announcement)",
+      "Correct": "yes"
+    },
+    {
+      "Pack": "red team",
+      "Should trigger": "no",
+      "Naive stress tests": 1,
+      "Seismo auto-triggers": 0,
+      "Held for review": 1,
+      "Retractions": 1,
+      "First trigger vs reference": "-",
+      "Correct": "yes"
+    },
+    {
+      "Pack": "quiet day",
+      "Should trigger": "no",
+      "Naive stress tests": 1,
+      "Seismo auto-triggers": 0,
+      "Held for review": 0,
+      "Retractions": 0,
+      "First trigger vs reference": "-",
+      "Correct": "yes"
+    }
+  ],
+  "dedup": [
+    {
+      "Pack": "svb 2023",
+      "Documents": 27,
+      "News/filing reports": 18,
+      "Social posts": 9,
+      "Stories (events)": 12,
+      "Max independent publishers": 8,
+      "Coordinated groups": 0
+    },
+    {
+      "Pack": "deepseek 2025",
+      "Documents": 21,
+      "News/filing reports": 12,
+      "Social posts": 9,
+      "Stories (events)": 8,
+      "Max independent publishers": 6,
+      "Coordinated groups": 0
+    },
+    {
+      "Pack": "tariff 2025",
+      "Documents": 18,
+      "News/filing reports": 13,
+      "Social posts": 5,
+      "Stories (events)": 9,
+      "Max independent publishers": 5,
+      "Coordinated groups": 0
+    },
+    {
+      "Pack": "red team",
+      "Documents": 45,
+      "News/filing reports": 3,
+      "Social posts": 42,
+      "Stories (events)": 1,
+      "Max independent publishers": 0,
+      "Coordinated groups": 1
+    },
+    {
+      "Pack": "quiet day",
+      "Documents": 13,
+      "News/filing reports": 10,
+      "Social posts": 3,
+      "Stories (events)": 11,
+      "Max independent publishers": 1,
+      "Coordinated groups": 0
+    }
+  ],
+  "gold": {
+    "table": [
+      {
+        "Component": "Entity linking",
+        "Metric": "precision / recall",
+        "Naive baseline": "0.83 / 0.95 (exact alias match)",
+        "Seismo": "1.00 / 0.95 (alias + context + cashtags)"
+      },
+      {
+        "Component": "Target sentiment",
+        "Metric": "sign accuracy on 45 entity pairs",
+        "Naive baseline": "0.78 (whole-document score)",
+        "Seismo": "0.84 (entity-window score)"
+      },
+      {
+        "Component": "Event class",
+        "Metric": "accuracy on 50 headlines",
+        "Naive baseline": "0.24 (majority class)",
+        "Seismo": "0.88 (8-K items + weighted rules)"
+      }
+    ],
+    "note": "50 author-labelled illustrative headlines in data/gold/headlines.jsonl, incl. ambiguous names and two-company headlines with opposite sentiment. Small and in-sample for the rules; read as a sanity check."
+  },
+  "latency": {
+    "documents": 124,
+    "engine_p50_ms": 0.95,
+    "engine_p95_ms": 1.82,
+    "docs_per_second": 940.2,
+    "llm_calls": 0
+  },
+  "module_a": {
+    "svb_2023": {
+      "rebalances": 4,
+      "turnover": 0.334,
+      "naive_turnover": 0.2104
+    },
+    "deepseek_2025": {
+      "rebalances": 3,
+      "turnover": 0.1053,
+      "naive_turnover": 0.5974,
+      "nvda_before_open": {
+        "weight": 0.022007,
+        "bench": 0.05,
+        "first_cut": "2025-01-26T16:22:00+00:00",
+        "lead_vs_open": "+22.1 h"
+      }
+    },
+    "tariff_2025": {
+      "rebalances": 3,
+      "turnover": 0.1524,
+      "naive_turnover": 0.452
+    },
+    "red_team": {
+      "rebalances": 0,
+      "turnover": 0.0,
+      "naive_turnover": 0.0
+    },
+    "quiet_day": {
+      "rebalances": 4,
+      "turnover": 0.2658,
+      "naive_turnover": 0.1565
+    }
+  },
+  "module_a_deepseek_performance": null,
+  "module_b": {
+    "svb_2023": [
+      {
+        "scenario": "svb_2023",
+        "impact": 9,
+        "epicenter": "SIVB",
+        "cet1_ratio_before": 0.13,
+        "cet1_ratio_after": 0.12899,
+        "ecl_before": 73116923.09,
+        "ecl_after": 87890937.93,
+        "reverse_m_rbi": 3.12,
+        "pre_tax_loss": 4719280.87
+      },
+      {
+        "scenario": "svb_2023",
+        "impact": 10,
+        "epicenter": "SIVB",
+        "cet1_ratio_before": 0.13,
+        "cet1_ratio_after": 0.13,
+        "ecl_before": 73116923.09,
+        "ecl_after": 94524849.74,
+        "reverse_m_rbi": 2.68,
+        "pre_tax_loss": -18620304.57
+      }
+    ],
+    "deepseek_2025": [
+      {
+        "scenario": "deepseek_2025",
+        "impact": 8,
+        "epicenter": "NVDA",
+        "cet1_ratio_before": 0.13,
+        "cet1_ratio_after": 0.12997,
+        "ecl_before": 73116923.09,
+        "ecl_after": 73327263.09,
+        "reverse_m_rbi": null,
+        "pre_tax_loss": 3603025.77
+      },
+      {
+        "scenario": "deepseek_2025",
+        "impact": 9,
+        "epicenter": "NVDA",
+        "cet1_ratio_before": 0.13,
+        "cet1_ratio_after": 0.13003,
+        "ecl_before": 73116923.09,
+        "ecl_after": 73327263.09,
+        "reverse_m_rbi": null,
+        "pre_tax_loss": 1391803.42
+      }
+    ],
+    "tariff_2025": [
+      {
+        "scenario": "tariff_2025",
+        "impact": 8,
+        "epicenter": null,
+        "cet1_ratio_before": 0.13,
+        "cet1_ratio_after": 0.11684,
+        "ecl_before": 73116923.09,
+        "ecl_after": 170270048.06,
+        "reverse_m_rbi": 2.27,
+        "pre_tax_loss": 365182313.07
+      },
+      {
+        "scenario": "tariff_2025",
+        "impact": 8,
+        "epicenter": "AAPL",
+        "cet1_ratio_before": 0.13,
+        "cet1_ratio_after": 0.11608,
+        "ecl_before": 73116923.09,
+        "ecl_after": 170284737.43,
+        "reverse_m_rbi": 2.23,
+        "pre_tax_loss": 368222713.85
+      },
+      {
+        "scenario": "tariff_2025",
+        "impact": 9,
+        "epicenter": null,
+        "cet1_ratio_before": 0.13,
+        "cet1_ratio_after": 0.1047,
+        "ecl_before": 73116923.09,
+        "ecl_after": 221729669.12,
+        "reverse_m_rbi": 1.7,
+        "pre_tax_loss": 501425577.03
+      }
+    ],
+    "red_team": [],
+    "quiet_day": []
+  },
+  "stress_inputs": "data/market/analog_shocks.csv"
+}
