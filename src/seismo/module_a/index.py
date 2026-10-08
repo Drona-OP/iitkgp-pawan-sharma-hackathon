@@ -89,33 +89,38 @@ def zscores(values: dict[str, float], counts: dict[str, int], k: float) -> dict[
 
 
 def _project(w: dict[str, float], holdings: dict[str, Holding], cfg: TiltConfig, floors: dict[str, float]) -> dict[str, float]:
-    """Clip to name, active and sector caps and renormalise (a few alternating passes)."""
+    """Enforce name, active and sector caps, then restore full investment (alternating passes).
+
+    Sector caps scale the sector's active weights towards the benchmark, so a name keeps the
+    direction of its tilt; the residual is spread over names with room, in proportion to room.
+    """
     bench = {t: h.bench for t, h in holdings.items()}
-    for _ in range(25):
+    lo = {t: max(0.0, bench[t] - cfg.active_cap) for t in w}
+    hi = {t: min(cfg.name_cap, bench[t] + cfg.active_cap) for t in w}
+    for t, f in floors.items():
+        lo[t] = hi[t] = f
+    sectors: dict[str, list[str]] = {}
+    for t, h in holdings.items():
+        sectors.setdefault(h.sector, []).append(t)
+    for _ in range(50):
         for t in w:
-            lo = max(0.0, bench[t] - cfg.active_cap)
-            hi = min(cfg.name_cap, bench[t] + cfg.active_cap)
-            if t in floors:
-                lo = hi = floors[t]
-            w[t] = min(hi, max(lo, w[t]))
-        sectors: dict[str, list[str]] = {}
-        for t, h in holdings.items():
-            sectors.setdefault(h.sector, []).append(t)
+            w[t] = min(hi[t], max(lo[t], w[t]))
         for names in sectors.values():
             active = sum(w[t] - bench[t] for t in names)
-            if abs(active) > cfg.sector_active_cap:
-                adj = (abs(active) - cfg.sector_active_cap) * (1 if active > 0 else -1)
-                movable = [t for t in names if t not in floors]
-                for t in movable:
-                    w[t] -= adj / len(movable)
-        free = [t for t in w if t not in floors]
-        total = sum(w.values())
-        resid = 1.0 - total
-        if abs(resid) < 1e-9:
+            if abs(active) > cfg.sector_active_cap + 1e-12:
+                scale = cfg.sector_active_cap / abs(active)
+                for t in names:
+                    if t not in floors:
+                        w[t] = bench[t] + (w[t] - bench[t]) * scale
+        resid = 1.0 - sum(w.values())
+        if abs(resid) < 1e-10:
             break
-        base = sum(w[t] for t in free) or 1.0
-        for t in free:
-            w[t] += resid * w[t] / base
+        room = {t: (hi[t] - w[t]) if resid > 0 else (w[t] - lo[t]) for t in w if t not in floors}
+        total_room = sum(max(0.0, r) for r in room.values())
+        if total_room <= 1e-12:
+            break
+        for t, r in room.items():
+            w[t] += resid * max(0.0, r) / total_room
     return w
 
 

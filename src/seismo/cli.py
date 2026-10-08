@@ -51,11 +51,17 @@ def cmd_replay(args: argparse.Namespace) -> int:
         store.reset()
     engine = build_engine(settings)
     adapter = ReplayAdapter(pack, speed=speed, max_gap_seconds=float(settings.get("replay.max_gap_seconds", 2)))
+    from seismo.consumers import build_consumers
+
+    consumers = build_consumers(settings, store)
     t0 = time.perf_counter()
-    counts = asyncio.run(run_pipeline([adapter], engine, _aggregator(settings), store))
+    counts = asyncio.run(run_pipeline([adapter], engine, _aggregator(settings), store, consumers=consumers))
+    gate = store.records("gate")
     print(
-        f"Replayed {pack.name}: {counts['documents']} documents -> {counts['signals']} signals "
-        f"in {time.perf_counter() - t0:.1f}s (sentiment backend: {engine.backend.name})"
+        f"Replayed {pack.name}: {counts['documents']} documents -> {counts['signals']} document signals, "
+        f"{counts['events']} event updates, {len(gate)} gate decisions, {len(store.records('stress'))} stress runs, "
+        f"{len(store.records('weights'))} index snapshots in {time.perf_counter() - t0:.1f}s "
+        f"(sentiment backend: {engine.backend.name})"
     )
     return 0
 
@@ -109,9 +115,13 @@ def cmd_live(args: argparse.Namespace) -> int:
         recorder = Recorder(args.record)
         print(f"Recording every ingested document to {args.record}")
     stop_after = args.minutes * 60 if args.minutes else None
+    from seismo.consumers import build_consumers
+
+    consumers = build_consumers(settings, store)
     print(f"Streaming from {', '.join(a.name for a in adapters)}" + (f" for {args.minutes:g} min" if stop_after else "") + ". Ctrl-C to stop.")
     try:
-        counts = asyncio.run(run_pipeline(adapters, engine, _aggregator(settings), store, recorder=recorder, stop_after_seconds=stop_after))
+        counts = asyncio.run(run_pipeline(adapters, engine, _aggregator(settings), store, recorder=recorder,
+                                          stop_after_seconds=stop_after, consumers=consumers))
         print(f"Done: {counts['documents']} documents -> {counts['signals']} signals")
     except KeyboardInterrupt:
         print("Stopped.")
@@ -184,6 +194,29 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_shocks(args: argparse.Namespace) -> int:
+    from seismo.module_b.factors import main as shocks_main
+
+    return shocks_main()
+
+
+def cmd_blotter(args: argparse.Namespace) -> int:
+    from seismo.module_b.blotter import main as blotter_main
+
+    return blotter_main()
+
+
+def cmd_stress(args: argparse.Namespace) -> int:
+    from seismo.module_b.memo import write_memo
+    from seismo.module_b.stress import StressEngine, StressRequest
+
+    engine = StressEngine.from_settings(load_settings())
+    req = StressRequest(args.scenario, args.impact, args.entity, args.event_class, args.subtype, args.m)
+    result = engine.run(req, "cli")
+    print(write_memo(result))
+    return 0
+
+
 def cmd_schema(args: argparse.Namespace) -> int:
     from seismo.schemas import Signal
 
@@ -231,6 +264,21 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--publisher", default="user-input")
     p.add_argument("--source-type", default="news", choices=["news", "social", "filing"])
     p.set_defaults(func=cmd_analyze)
+
+    p = sub.add_parser("shocks", help="Compute analog shock vectors from data/market (Module B)")
+    p.set_defaults(func=cmd_shocks)
+
+    p = sub.add_parser("blotter", help="Write the synthetic trade blotter to data/blotter (Module B)")
+    p.set_defaults(func=cmd_blotter)
+
+    p = sub.add_parser("stress", help="Run one Module B stress test and print the memo")
+    p.add_argument("--scenario", default="svb_2023")
+    p.add_argument("--impact", type=int, default=9)
+    p.add_argument("--entity", default=None, help="obligor at the centre, e.g. SIVB")
+    p.add_argument("--event-class", default="CREDIT_EVENT")
+    p.add_argument("--subtype", default="BANK_RUN")
+    p.add_argument("--m", type=float, default=1.0, help="extra severity multiplier")
+    p.set_defaults(func=cmd_stress)
 
     p = sub.add_parser("schema", help="Export the Signal JSON Schema")
     p.add_argument("--out", default="docs/signal_schema.json")

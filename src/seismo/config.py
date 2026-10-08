@@ -22,6 +22,8 @@ DEFAULTS: dict[str, Any] = {
     "linker": {"min_link_score": 0.6},
     "impact": {"model_path": "models/impact_calibrated.json"},
     "scenarios": {"path": "config/scenarios.yaml"},
+    "module_a": {"kappa": 0.6, "strict": False},
+    "module_b": {"shocks_path": "data/market/analog_shocks.csv"},
     "gate": {"min_impact": 8, "min_confidence": 0.7, "min_publishers": 3, "window_minutes": 60},
     "novelty": {"window_hours": 24.0},
     "aggregation": {"half_life_hours": 6.0, "impact_window_hours": 6.0, "history_hours": 72.0},

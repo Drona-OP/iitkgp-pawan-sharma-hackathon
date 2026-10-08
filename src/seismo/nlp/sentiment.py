@@ -98,23 +98,53 @@ NEGATIVE = (NEGATIVE | EXTRA_NEGATIVE | STRONG_NEGATIVE) - {"pause"}
 STRONG_POSITIVE = frozenset({"soar", "soars", "soared", "surge", "surges", "surged", "record", "best", "rally", "rallied"})
 
 
-class LexiconBackend:
-    """Transparent fallback for CI and offline runs. FinBERT replaces it when installed."""
+INTENSIFIERS = frozenset({"sharp", "sharply", "steep", "steeply", "heavy", "heavily", "massive",
+                          "biggest", "record", "deep", "deepest", "severe", "brutal"})
+QUESTION_WORDS = frozenset({"question", "questions", "questioned", "challenges", "challenge", "selling"})
+NEUTRALISED_PHRASES = re.compile(r"\bgains? traction\b|\bpaused?\b.{0,20}\bfor\b", re.IGNORECASE)
+MOVE_RE = re.compile(
+    r"(?P<sign>[-+\u2212])\s?\d+(?:\.\d+)?\s?%"
+    r"|\b(?P<down>down|fell|falls?|drops?|dropped|slid|slides|sank|sinks|lost|loses|lose|plunged|plunges|tumbled|tumbles|declined|declines)\b(?:\s+(?:about|more than|nearly|almost|over|roughly|some))?\s+\d+(?:\.\d+)?\s?%"
+    r"|\b(?P<up>up|rose|rises|jumped|jumps|gained|gains|climbed|climbs|soared|soars|surged|surges|rallied|rallies)\b(?:\s+(?:about|more than|nearly|almost|over|roughly|some))?\s+\d+(?:\.\d+)?\s?%",
+    re.IGNORECASE,
+)
 
-    name = "lexicon-v1"
+
+class LexiconBackend:
+    """Transparent fallback for CI and offline runs. FinBERT replaces it when installed.
+
+    A finance word list (positive, negative, and doubled weights for acute-stress words), a
+    three-token negation window, intensifiers ("sharp losses"), and signed percentage moves
+    ("-12%", "fell 17%") read as strong polarity.
+    """
+
+    name = "lexicon-v2"
 
     def predict(self, texts: list[str]) -> list[Probs]:
         return [self._score(t) for t in texts]
 
     @staticmethod
     def _score(text: str) -> Probs:
-        tokens = TOKEN_RE.findall(text.lower())
         pos = neg = 0.0
+        for m in MOVE_RE.finditer(text):
+            if m.group("sign"):
+                if m.group("sign") in "-\u2212":
+                    neg += 2.0
+                else:
+                    pos += 2.0
+            elif m.group("down"):
+                neg += 2.0
+            elif m.group("up"):
+                pos += 2.0
+        cleaned = MOVE_RE.sub(" ", NEUTRALISED_PHRASES.sub(" ", text))
+        tokens = TOKEN_RE.findall(cleaned.lower())
         for i, tok in enumerate(tokens):
-            polarity = 1 if tok in POSITIVE else -1 if tok in NEGATIVE else 0
+            polarity = 1 if tok in POSITIVE else -1 if tok in NEGATIVE or tok in QUESTION_WORDS else 0
             if polarity == 0:
                 continue
             weight = 2.0 if tok in STRONG_NEGATIVE or tok in STRONG_POSITIVE else 1.0
+            if any(t in INTENSIFIERS for t in tokens[max(0, i - 2):i]):
+                weight *= 1.5
             if any(t in NEGATORS for t in tokens[max(0, i - 3):i]):
                 polarity = -polarity
             if polarity > 0:

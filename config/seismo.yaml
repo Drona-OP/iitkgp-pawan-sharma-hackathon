@@ -26,6 +26,13 @@ gate:                      # Module B auto-trigger gate (signals/gate.py)
   min_publishers: 3
   window_minutes: 60
 
+module_a:                  # tactical rebalancer (module_a/index.py)
+  kappa: 0.6               # tilt aggressiveness
+  strict: false            # true = S&P DJI filter values (relevance 100, novelty 100, |s| >= 0.6)
+
+module_b:                  # strategic stress test (module_b/stress.py)
+  shocks_path: data/market/analog_shocks.csv   # `make shocks` computes it from data/market
+
 novelty:
   window_hours: 24         # RavenPack-style 24-hour novelty chains
 

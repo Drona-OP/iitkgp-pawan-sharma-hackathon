@@ -34,7 +34,9 @@ def build_consumers(settings, store, module_a: bool = True, module_b: bool = Tru
         try:
             from seismo.module_a.consumer import ModuleAConsumer
 
-            consumers.append(ModuleAConsumer.from_settings(settings, store))
+            module = ModuleAConsumer.from_settings(settings, store)
+            gate.sinks.append(module.on_decision)
+            consumers.append(module)
         except Exception:  # noqa: BLE001
             log.exception("Module A failed to start")
     return consumers
