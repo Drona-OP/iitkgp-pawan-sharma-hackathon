@@ -28,6 +28,9 @@ EXAMPLES = [
     "Regulators close a regional lender after a run on deposits; FDIC named receiver",
     "Apple pie recipes for the long weekend",
     "Nvidia shares slide 9% premarket as a rival unveils a cheaper AI model",
+    "Infosys gains after a large deal win while TCS slides on weak guidance",
+    "Short seller accuses Adani Group of stock manipulation and accounting fraud",
+    "HDFC Bank shares rise as deposit growth beats estimates; SBI flat",
 ]
 
 
