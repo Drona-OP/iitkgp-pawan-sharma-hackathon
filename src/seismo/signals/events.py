@@ -103,7 +103,7 @@ class EventBuilder:
             social_authors=len(social_authors), authoritative=authoritative,
             novelty=100, relevance=relevance, subtype=label.subtype,
         )
-        impact, p = self.impact.score(features)
+        impact, p, calibrated = self.impact.score_ex(features)
 
         flags: list[str] = []
         if coordinated:
@@ -135,7 +135,7 @@ class EventBuilder:
             sentiment_confidence=round(sent_conf, 4),
             event=label,
             impact_score=impact,
-            p_large_move=round(p, 4) if self.impact.calibrated else None,
+            p_large_move=round(p, 4) if calibrated else None,
             novelty=100,
             relevance=relevance,
             corroboration=Corroboration(

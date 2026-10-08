@@ -48,6 +48,7 @@ W_AUTHORITY = 0.3
 W_NOVELTY = 0.6
 W_RELEVANCE = 0.5
 SOCIAL_CAP = 32
+MIN_SUPPORT = 30   # training events a class needs before its calibrated rate is used
 
 
 @dataclass(frozen=True)
@@ -92,6 +93,11 @@ class PriorImpact:
         p = 1 / (1 + math.exp(-self.logit(f)))
         return to_impact(p), p
 
+    def score_ex(self, f: ImpactFeatures) -> tuple[int, float, bool]:
+        """Impact, score and whether the score is a calibrated probability."""
+        impact, p = self.score(f)
+        return impact, p, False
+
 
 class CalibratedImpact(PriorImpact):
     """Loads models/impact_calibrated.json written by ``python -m seismo.eval.impact_study``.
@@ -110,6 +116,9 @@ class CalibratedImpact(PriorImpact):
         self.iso_x = [float(x) for x in spec["isotonic"]["x"]]
         self.iso_y = [float(y) for y in spec["isotonic"]["y"]]
         self.diffusion_centre = float(spec.get("diffusion_centre", 1.6))
+        support = spec.get("class_support", {})
+        self.supported = {E(k) for k, n in support.items() if int(n) >= MIN_SUPPORT} if support else set(self.class_logit)
+        self.prior = PriorImpact()
 
     def _iso(self, z: float) -> float:
         xs, ys = self.iso_x, self.iso_y
@@ -134,8 +143,16 @@ class CalibratedImpact(PriorImpact):
         )
 
     def score(self, f: ImpactFeatures) -> tuple[int, float]:
+        impact, p, _ = self.score_ex(f)
+        return impact, p
+
+    def score_ex(self, f: ImpactFeatures) -> tuple[int, float, bool]:
+        """Classes the 8-K study never saw (macro, geopolitical, product news) keep the prior."""
+        if f.event not in self.supported:
+            impact, p = self.prior.score(f)
+            return impact, p, False
         p = self._iso(self.logit(f))
-        return to_impact(p), p
+        return to_impact(p), p, True
 
 
 def load_impact_model(path: str | Path | None) -> PriorImpact:
