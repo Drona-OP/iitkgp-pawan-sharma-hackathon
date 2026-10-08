@@ -73,58 +73,150 @@ def universe_rows() -> list[dict[str, str]]:
         return list(csv.DictReader(fh))
 
 
-def _get(url: str, headers: dict[str, str] | None = None, tries: int = 4) -> bytes:
+def _get(url: str, headers: dict[str, str] | None = None, tries: int = 5, timeout: int = 90) -> bytes:
     last: Exception | None = None
     for attempt in range(tries):
         try:
             req = urllib.request.Request(url, headers=headers or {"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=60) as resp:  # noqa: S310 - fixed public URLs
+            with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - fixed public URLs
                 return resp.read()
-        except (urllib.error.URLError, TimeoutError) as exc:
+        except (OSError, TimeoutError) as exc:  # URLError, ConnectionResetError (WinError 10054), timeouts
             last = exc
-            time.sleep(1.5 * (attempt + 1))
+            time.sleep(3 * (attempt + 1))
     raise RuntimeError(f"GET {url} failed after {tries} tries: {last}")
 
 
-def fetch_prices() -> None:
+# Stooq (stooq.com) is a free fallback when Yahoo is blocked or throttled.
+STOOQ = {"BZ=F": "cb.f", "GC=F": "gc.f", "DX-Y.NYB": "dx.f", "INR=X": "usdinr", "EURUSD=X": "eurusd"}
+
+
+def _stooq(symbol: str):
+    import pandas as pd
+
+    code = STOOQ.get(symbol, symbol.lower().replace(".", "-") + ".us")
+    if symbol.startswith("^"):
+        return None
+    raw = _get(f"https://stooq.com/q/d/l/?s={code}&i=d", tries=3, timeout=60).decode("utf-8", "replace")
+    if not raw.startswith("Date"):
+        return None
+    df = pd.read_csv(io.StringIO(raw), parse_dates=["Date"]).set_index("Date").sort_index()
+    df = df[df.index >= START]
+    return df if len(df) else None
+
+
+def _yahoo(symbol: str):
     import pandas as pd
     import yfinance as yf
 
+    for attempt in range(3):
+        try:
+            df = yf.download(symbol, start=START, auto_adjust=True, progress=False, threads=False, timeout=60)
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            if len(df) and df["Close"].notna().any():
+                return df
+        except Exception as exc:  # noqa: BLE001
+            print(f"[prices] {symbol}: yahoo attempt {attempt + 1} failed ({exc.__class__.__name__})")
+        time.sleep(4 * (attempt + 1))
+    return None
+
+
+def _read_existing(name: str):
+    import pandas as pd
+
+    path = OUT / name
+    if path.exists() and path.stat().st_size > 200:
+        return pd.read_csv(path, parse_dates=["date"]).set_index("date")
+    return pd.DataFrame()
+
+
+def fetch_prices() -> None:
+    """Symbol by symbol, Yahoo first then Stooq; reruns only fetch what is still missing."""
+    import pandas as pd
+
+    try:
+        import yfinance as yf
+
+        cache = Path(os.environ.get("TEMP", "/tmp")) / "seismo-yf-cache"
+        cache.mkdir(parents=True, exist_ok=True)
+        yf.set_tz_cache_location(str(cache))  # avoids "database is locked" inside synced folders
+    except Exception:  # noqa: BLE001
+        pass
     tickers = [r["ticker"] for r in universe_rows()] + MARKET + SECTOR_ETFS + list(YAHOO_FACTORS)
-    print(f"[prices] downloading {len(tickers)} symbols from {START} via yfinance ...")
-    raw = yf.download(tickers, start=START, auto_adjust=True, progress=False, threads=True)
-    close = raw["Close"] if isinstance(raw.columns, pd.MultiIndex) else raw
-    close = close.rename(columns=YAHOO_FACTORS)
-    close.index = pd.to_datetime(close.index).tz_localize(None).normalize()
-    close = close.sort_index().dropna(how="all")
-    missing = [t for t in tickers if YAHOO_FACTORS.get(t, t) not in close.columns or close[YAHOO_FACTORS.get(t, t)].isna().all()]
-    if missing:
-        print(f"[prices] WARNING: no data for {missing}")
-    close.index.name = "date"
-    close.round(6).to_csv(OUT / "prices_daily.csv")
-    print(f"[prices] wrote {len(close)} rows x {close.shape[1]} columns")
-    if isinstance(raw.columns, pd.MultiIndex) and "Open" in raw.columns.get_level_values(0):
-        opens = raw["Open"].rename(columns=YAHOO_FACTORS)
-        opens.index = pd.to_datetime(opens.index).tz_localize(None).normalize()
-        opens = opens.sort_index().loc["2019-01-01":].dropna(how="all")  # opens only for replay windows
+    closes, opens = _read_existing("prices_daily.csv"), _read_existing("prices_open.csv")
+    todo = [t for t in tickers if YAHOO_FACTORS.get(t, t) not in closes.columns or closes[YAHOO_FACTORS.get(t, t)].isna().all()]
+    print(f"[prices] {len(tickers) - len(todo)} symbols already saved, fetching {len(todo)} ...")
+    got_c, got_o, failed = {}, {}, []
+    for i, t in enumerate(todo, 1):
+        name = YAHOO_FACTORS.get(t, t)
+        df, src = _yahoo(t), "yahoo"
+        if df is None:
+            try:
+                df, src = _stooq(t), "stooq"
+            except RuntimeError:
+                df = None
+        if df is None:
+            failed.append(t)
+            print(f"[prices] {i:2d}/{len(todo)} {t:9s} FAILED")
+            continue
+        df.index = pd.to_datetime(df.index).tz_localize(None).normalize()
+        got_c[name] = df["Close"]
+        if "Open" in df.columns:
+            got_o[name] = df["Open"]
+        print(f"[prices] {i:2d}/{len(todo)} {t:9s} {len(df):5d} days from {src}")
+        time.sleep(0.5)
+    if got_c:
+        closes = pd.concat([closes, pd.DataFrame(got_c)], axis=1).sort_index()
+        closes = closes.loc[:, ~closes.columns.duplicated(keep="last")]
+        closes.index.name = "date"
+        closes.round(6).to_csv(OUT / "prices_daily.csv")
+    if got_o:
+        new_o = pd.DataFrame(got_o).loc["2019-01-01":]
+        opens = pd.concat([opens, new_o], axis=1).sort_index()
+        opens = opens.loc[:, ~opens.columns.duplicated(keep="last")]
         opens.index.name = "date"
         opens.round(6).to_csv(OUT / "prices_open.csv")
-        print(f"[prices] wrote opens: {len(opens)} rows")
+    print(f"[prices] saved {closes.shape[1] if len(closes) else 0} symbols; still missing: {failed or 'none'}")
+    if failed:
+        raise RuntimeError(f"missing {len(failed)} symbols; rerun later or on another network")
+
+
+def _sec_shares(cik: str, ua: str) -> float | None:
+    """Shares outstanding from SEC company facts (dei:EntityCommonStockSharesOutstanding)."""
+    try:
+        data = json.loads(_get(f"https://data.sec.gov/api/xbrl/companyconcept/CIK{cik}/dei/EntityCommonStockSharesOutstanding.json",
+                               headers={"User-Agent": ua, "Accept-Encoding": "identity"}, tries=2))
+        units = data["units"]["shares"]
+        return float(sorted(units, key=lambda u: u.get("end", ""))[-1]["val"])
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def fetch_caps() -> None:
-    import yfinance as yf
-
+    """Market cap = SEC shares outstanding x last close (falls back to yfinance)."""
+    ua = os.environ.get("SEISMO_EDGAR_USER_AGENT", "")
+    closes = _read_existing("prices_daily.csv")
     rows = []
     for r in universe_rows():
-        t = r["ticker"]
-        try:
-            cap = float(yf.Ticker(t).fast_info["marketCap"])
-        except Exception as exc:  # noqa: BLE001
-            print(f"[caps] {t}: {exc}")
-            cap = float("nan")
+        t, cik = r["ticker"], r["cik"].zfill(10)
+        cap = float("nan")
+        shares = _sec_shares(cik, ua) if ua and "example.com" not in ua else None
+        if shares and t in closes.columns and closes[t].notna().any():
+            cap = shares * float(closes[t].dropna().iloc[-1])
+            src = "SEC shares x close"
+        else:
+            src = "yfinance"
+            try:
+                import yfinance as yf
+
+                cap = float(yf.Ticker(t).fast_info["marketCap"])
+            except Exception as exc:  # noqa: BLE001
+                src = f"failed ({exc.__class__.__name__})"
+        print(f"[caps] {t:5s} {cap / 1e9:10,.1f} bn  ({src})")
         rows.append({"ticker": t, "market_cap_usd": cap})
         time.sleep(0.2)
+    if all(r["market_cap_usd"] != r["market_cap_usd"] for r in rows):
+        raise RuntimeError("no market caps; fetch prices first")
     with (OUT / "caps.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=["ticker", "market_cap_usd"], lineterminator="\n")
         w.writeheader()
@@ -135,12 +227,19 @@ def fetch_caps() -> None:
 def fetch_fred() -> None:
     import pandas as pd
 
-    frames = []
+    existing = _read_existing("fred_daily.csv")
+    frames = [existing[c] for c in existing.columns if existing[c].notna().any()] if len(existing) else []
+    have = {f.name for f in frames}
+    failed = []
     for sid, name in FRED_SERIES.items():
+        if name in have:
+            print(f"[fred] {sid:14s} already saved")
+            continue
         try:
             raw = _get(FRED_URL.format(sid=sid)).decode("utf-8")
         except RuntimeError as exc:
             print(f"[fred] {sid}: {exc}")
+            failed.append(sid)
             continue
         df = pd.read_csv(io.StringIO(raw))
         date_col = df.columns[0]  # 'observation_date' (current) or 'DATE' (older format)
@@ -157,6 +256,8 @@ def fetch_fred() -> None:
     out.index.name = "date"
     out.round(4).to_csv(OUT / "fred_daily.csv")
     print(f"[fred] wrote {len(out)} rows x {out.shape[1]} columns")
+    if failed:
+        raise RuntimeError(f"missing FRED series {failed}; rerun `--only fred` later or on another network")
 
 
 def _sec_json(name: str, ua: str) -> dict:
@@ -191,6 +292,9 @@ def fetch_edgar() -> None:
     if not ua or "example.com" in ua:
         print("[edgar] set SEISMO_EDGAR_USER_AGENT='Your Name your@email' first (SEC requires it)")
         return
+    if (OUT / "edgar_8k.csv").exists() and (OUT / "edgar_8k.csv").stat().st_size > 1000 and not os.environ.get("SEISMO_REFETCH"):
+        print("[edgar] edgar_8k.csv already saved (set SEISMO_REFETCH=1 to download again)")
+        return
     rows: list[dict[str, str]] = []
     for r in universe_rows():
         ticker, cik = r["ticker"], r["cik"].zfill(10)
@@ -218,7 +322,7 @@ def fetch_edgar() -> None:
     print(f"[edgar] wrote {len(rows)} filings")
 
 
-STEPS = {"prices": fetch_prices, "caps": fetch_caps, "fred": fetch_fred, "edgar": fetch_edgar}
+STEPS = {"prices": fetch_prices, "fred": fetch_fred, "edgar": fetch_edgar, "caps": fetch_caps}
 
 
 def main() -> int:
