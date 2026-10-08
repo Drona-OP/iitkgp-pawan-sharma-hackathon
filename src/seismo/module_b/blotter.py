@@ -198,7 +198,7 @@ def generate_trades(obligors: list[Obligor], rng: random.Random) -> list[Trade]:
 def write_blotter(trades: list[Trade], obligors: list[Obligor], out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     with (out_dir / "trade_blotter.csv").open("w", newline="", encoding="utf-8") as fh:
-        w = csv.writer(fh)
+        w = csv.writer(fh, lineterminator="\n")
         w.writerow(["trade_id", "trade_date", "counterparty", "instrument", "direction", "notional",
                     "rate", "maturity", "collateral", "currency", "facility_id", "extra", "synthetic"])
         for t in trades:
@@ -207,7 +207,7 @@ def write_blotter(trades: list[Trade], obligors: list[Obligor], out_dir: Path) -
                         f"{t.notional:.0f}", t.rate, t.maturity.isoformat(), t.collateral, t.currency,
                         t.facility_id, extra, "true"])
     with (out_dir / "obligors.csv").open("w", newline="", encoding="utf-8") as fh:
-        w = csv.writer(fh)
+        w = csv.writer(fh, lineterminator="\n")
         w.writerow(["obligor_id", "name", "sector", "country", "internal_rating", "origination_rating",
                     "listed", "bank", "index_member", "synthetic_exposure"])
         for o in obligors:

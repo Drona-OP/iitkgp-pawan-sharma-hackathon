@@ -5,13 +5,13 @@ datasets:
   licence: MIT
   synthetic: true
   rows: 60
-  sha256: 1ce14469626b3f5a416cba0a5360eefc04faa0240321a9bf097672c0ca98c424
+  sha256: cf5d7d5ca4df7e0d784652ce81352e5096b8c885c7056d78ea764486cc89ae3d
 - path: data/blotter/trade_blotter.csv
   source: python -m seismo blotter (seed 2026)
   licence: MIT
   synthetic: true
   rows: 561
-  sha256: 46d252f75b6c5df58b95b9ed1d28d10259b629cb3ccc01592bd44304079d5f57
+  sha256: bc763a34be0ca2f50fa6c6b263b4a1c82201a698fb99dd14b30c82c74cc023fd
 - path: data/gold/headlines.jsonl
   source: Author-labelled illustrative headlines
   licence: MIT
@@ -59,7 +59,7 @@ datasets:
   licence: Public / MIT
   synthetic: false
   rows: 20
-  sha256: 44a6d49a4b28cf7abad1e08ed66d50e27efaa711be7366215fcecd368dec992d
+  sha256: b1d7af5bc7b1d03eeadfbe24b5bb2a77c6a2f1f820f5a83dd2c18e9ffab54a5c
 - path: data/watchlist.csv
   source: Author; Harbor National Bank is fictional
   licence: MIT

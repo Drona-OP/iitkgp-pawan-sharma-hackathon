@@ -134,7 +134,7 @@ def write_shocks(shocks: list[Shock], path: str | Path) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as fh:
-        w = csv.writer(fh)
+        w = csv.writer(fh, lineterminator="\n")
         w.writerow(["scenario", "factor", "value", "kind", "source", "peak_date"])
         for s in shocks:
             w.writerow([s.scenario, s.factor, s.value, s.kind, s.source, s.peak_date])

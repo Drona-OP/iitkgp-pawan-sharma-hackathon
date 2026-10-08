@@ -126,7 +126,7 @@ def fetch_caps() -> None:
         rows.append({"ticker": t, "market_cap_usd": cap})
         time.sleep(0.2)
     with (OUT / "caps.csv").open("w", newline="", encoding="utf-8") as fh:
-        w = csv.DictWriter(fh, fieldnames=["ticker", "market_cap_usd"])
+        w = csv.DictWriter(fh, fieldnames=["ticker", "market_cap_usd"], lineterminator="\n")
         w.writeheader()
         w.writerows(rows)
     print(f"[caps] wrote {len(rows)} rows")
@@ -212,7 +212,7 @@ def fetch_edgar() -> None:
         return
     rows.sort(key=lambda x: (x["acceptance_datetime"] or x["filing_date"], x["ticker"]))
     with (OUT / "edgar_8k.csv").open("w", newline="", encoding="utf-8") as fh:
-        w = csv.DictWriter(fh, fieldnames=list(rows[0]))
+        w = csv.DictWriter(fh, fieldnames=list(rows[0]), lineterminator="\n")
         w.writeheader()
         w.writerows(rows)
     print(f"[edgar] wrote {len(rows)} filings")
