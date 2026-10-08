@@ -234,7 +234,7 @@ def main() -> int:
     results.mkdir(parents=True, exist_ok=True)
     (results / "impact_report.json").write_text(json.dumps({"report": out["report"], "by_class": out["by_class"]}, indent=2), encoding="utf-8")
     events.assign(t0=events["t0"].dt.strftime("%Y-%m-%d")).drop(columns=["pos"]).to_csv(
-        root / "data" / "market" / "impact_events.csv", index=False)
+        root / "data" / "market" / "impact_events.csv", index=False, lineterminator="\n")
     for k in ("train", "valid", "test", "post"):
         r = out["report"][k]
         if r.get("n"):

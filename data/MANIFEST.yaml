@@ -59,7 +59,7 @@ datasets:
   licence: Public; cite FRED
   synthetic: false
   rows: 5219
-  sha256: 1ce4db14cc01827d774c46474b7179f48252cd8710f568f455567a9354200ece
+  sha256: 04ace44de54ffc14ac04beebe88256f88ffe3c30db7891f0961c2a3b1d8d1519
 - path: data/market/impact_events.csv
   source: Computed by `make impact` (8-K event study)
   licence: MIT
@@ -71,13 +71,13 @@ datasets:
   licence: Yahoo terms; research use
   synthetic: false
   rows: 5160
-  sha256: ef5b3e76d0c548197cc78376771dd3251c14151600f03e12d0e22829cfa8dc3c
+  sha256: aa8a4103567d20109d2390a5ed5374235f0e1d8fb2ae8b2a872dd4361e0a78f4
 - path: data/market/prices_open.csv
   source: Yahoo Finance via yfinance (scripts/fetch_data.py)
   licence: Yahoo terms; research use
   synthetic: false
   rows: 2029
-  sha256: 62c25ddd1b428819f555613b5eaf52992b84fcd45cadaf3139246960b8765477
+  sha256: 81cbfaf6f10575bd7b1776741f4dd358c285b838f2735d6b7667d9fd716b552f
 - path: data/market/shares_in.csv
   source: 'Yahoo Finance via yfinance: NSE shares outstanding (scripts/fetch_data.py)'
   licence: Yahoo terms; research use

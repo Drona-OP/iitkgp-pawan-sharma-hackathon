@@ -199,13 +199,13 @@ def fetch_prices() -> None:
         closes = pd.concat([closes, pd.DataFrame(got_c)], axis=1).sort_index()
         closes = closes.loc[:, ~closes.columns.duplicated(keep="last")]
         closes.index.name = "date"
-        closes.round(6).to_csv(OUT / "prices_daily.csv")
+        closes.round(6).to_csv(OUT / "prices_daily.csv", lineterminator="\n")
     if got_o:
         new_o = pd.DataFrame(got_o).loc["2019-01-01":]
         opens = pd.concat([opens, new_o], axis=1).sort_index()
         opens = opens.loc[:, ~opens.columns.duplicated(keep="last")]
         opens.index.name = "date"
-        opens.round(6).to_csv(OUT / "prices_open.csv")
+        opens.round(6).to_csv(OUT / "prices_open.csv", lineterminator="\n")
     print(f"[prices] saved {closes.shape[1] if len(closes) else 0} symbols; still missing: {failed or 'none'}")
     if failed:
         raise RuntimeError(f"missing {len(failed)} symbols; rerun later or on another network")
@@ -284,7 +284,7 @@ def fetch_fred() -> None:
         return
     out = pd.concat(frames, axis=1).sort_index()
     out.index.name = "date"
-    out.round(4).to_csv(OUT / "fred_daily.csv")
+    out.round(4).to_csv(OUT / "fred_daily.csv", lineterminator="\n")
     print(f"[fred] wrote {len(out)} rows x {out.shape[1]} columns")
     if failed:
         raise RuntimeError(f"missing FRED series {failed}; rerun `--only fred` later or on another network")
