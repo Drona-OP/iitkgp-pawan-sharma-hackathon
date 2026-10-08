@@ -18,13 +18,17 @@ import streamlit as st  # noqa: E402
 st.set_page_config(page_title="Seismo", page_icon="📈", layout="wide")
 
 from seismo.ui import common  # noqa: E402
-from seismo.ui.pages import model_lab, module_a, module_b, radar, try_it  # noqa: E402
+from seismo.ui.views import model_lab, module_a, module_b, radar, try_it  # noqa: E402
 
 st.markdown(common.CSS, unsafe_allow_html=True)
 
 controller = common.get_controller()
 default_pack = common.settings.path("replay.default_pack")
-if os.environ.get("SEISMO_AUTOSTART") == "1" and not controller.autostarted and default_pack.exists():
+# `seismo demo` asks for a replay at start-up; a hosted copy (Streamlit Community Cloud) with an
+# empty store starts one too, so a first-time visitor never lands on blank charts.
+fresh = not common.records("gate", limit=1) and not common.records("weights", limit=1)
+autostart = os.environ.get("SEISMO_AUTOSTART") == "1" or fresh
+if autostart and not controller.autostarted and default_pack.exists():
     controller.autostarted = True
     controller.start(default_pack, float(common.settings.get("replay.speed", 3600)))
 

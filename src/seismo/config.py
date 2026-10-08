@@ -18,7 +18,7 @@ PACKAGE_DIR = Path(__file__).resolve().parent
 DEFAULTS: dict[str, Any] = {
     "store": {"path": "data/seismo.db"},
     "universe": {"path": "data/universe.csv"},
-    "sentiment": {"backend": "auto", "finbert_model": "ProsusAI/finbert"},
+    "sentiment": {"backend": "auto", "finbert_model": "ProsusAI/finbert", "target_model": "models/sentiment_target.json"},
     "linker": {"min_link_score": 0.6},
     "impact": {"model_path": "models/impact_calibrated.json"},
     "scenarios": {"path": "config/scenarios.yaml"},

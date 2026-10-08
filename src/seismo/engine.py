@@ -112,12 +112,23 @@ class Engine:
         if not mentions:
             return EngineResult()
 
+        targeted = getattr(self.backend, "targeted", False)
+        other_spans = {m.entity_id: [sp for o in mentions if o.entity_id != m.entity_id for sp in o.spans] for m in mentions}
         windows = [
-            entity_windows(doc, m, others=[sp for o in mentions if o.entity_id != m.entity_id for sp in o.spans])
+            # A target-aware model reads the whole sentence with the entities masked; the lexicon
+            # needs the sentence cut down to the entity's own clause.
+            entity_windows(doc, m, others=other_spans[m.entity_id], split_clauses=not targeted)
             for m in mentions
         ]
-        flat = [text[s:e] for ws in windows for s, e in ws]
-        probs = self.backend.predict(flat)
+        if targeted:
+            items = [
+                (text[s:e], [(a - s, b - s) for a, b in m.spans if s <= a and b <= e],
+                 [(a - s, b - s) for a, b in other_spans[m.entity_id] if s <= a and b <= e])
+                for m, ws in zip(mentions, windows, strict=True) for s, e in ws
+            ]
+            probs = self.backend.predict_targeted(items)  # type: ignore[attr-defined]
+        else:
+            probs = self.backend.predict([text[s:e] for ws in windows for s, e in ws])
         cred = credibility(doc.publisher, doc.source_type, doc.author)
         authoritative = is_authoritative(doc.publisher, doc.source_type)
         lookalike = is_lookalike(doc.publisher, doc.author)
@@ -220,5 +231,6 @@ def build_engine(settings: Settings | None = None, backend: SentimentBackend | N
     backend = backend or make_backend(
         str(settings.get("sentiment.backend", "auto")),
         str(settings.get("sentiment.finbert_model", "ProsusAI/finbert")),
+        settings.path("sentiment.target_model"),
     )
     return Engine(universe, backend, settings)

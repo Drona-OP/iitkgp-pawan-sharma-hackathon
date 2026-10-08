@@ -91,3 +91,31 @@ def test_credibility_is_not_part_of_impact():
     a, _ = heuristic_impact(EventClass.CREDIT_EVENT, -0.9, 0.3, 80, 100)
     b, _ = heuristic_impact(EventClass.CREDIT_EVENT, -0.9, 0.95, 80, 100)
     assert a == b
+
+def test_target_masked_model_scores_each_company_separately(tmp_path):
+    import json
+    import re
+
+    from seismo.eval.sentiment_train import _fit, to_spec
+    from seismo.nlp.target_model import TargetModelBackend, mask
+
+    names = ["Infosys", "Wipro", "SpiceJet", "IndiGo", "Maruti", "Cipla"]
+    up, down = ["gains", "jumps", "rallies", "surges"], ["falls", "slides", "slumps", "drops"]
+    rows = []
+    for i in range(240):
+        a, b = names[i % 6], names[(i + 1 + i // 6) % 6]
+        if a == b:
+            continue
+        title = f"{a} {up[i % 4]} while {b} {down[(i // 4) % 4]}"
+        sa = [(0, len(a))]
+        sb = [(m.start(), m.end()) for m in re.finditer(b, title)]
+        rows.append({"hid": i, "title": title, "target": sa, "others": sb, "label": "positive"})
+        rows.append({"hid": i, "title": title, "target": sb, "others": sa, "label": "negative"})
+    vec, clf = _fit(rows, True, 1.0)
+    path = tmp_path / "m.json"
+    path.write_text(json.dumps(to_spec(vec, clf, "unit test")), encoding="utf-8")
+    model = TargetModelBackend(path)
+    title = "Cipla gains while Maruti slides"
+    p_cipla, p_maruti = model.predict_targeted([(title, [(0, 5)], [(18, 24)]), (title, [(18, 24)], [(0, 5)])])
+    assert p_cipla[2] > p_cipla[0] and p_maruti[0] > p_maruti[2]
+    assert mask(title, [(0, 5)], [(18, 24)]) == "TGT gains while OTH slides"

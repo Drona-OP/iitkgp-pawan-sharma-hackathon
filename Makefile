@@ -1,6 +1,6 @@
 PY ?= python
 
-.PHONY: install install-ml demo replay live record api ui test lint schema data shocks blotter impact packs results all-offline
+.PHONY: install install-ml demo replay live record api ui test lint schema data shocks blotter impact sentiment packs results all-offline
 
 install:            ## dependencies + editable install
 	$(PY) -m pip install -r requirements.txt -r requirements-dev.txt
@@ -39,8 +39,12 @@ blotter:            ## synthetic trade blotter -> data/blotter
 impact:             ## 8-K event study -> models/impact_calibrated.json
 	$(PY) -m seismo.eval.impact_study
 
-packs:              ## rebuild the five replay packs
+sentiment:          ## train the target-aware sentiment model on SEntFiN -> models/sentiment_target.json
+	$(PY) -m seismo.eval.sentiment_train
+
+packs:              ## rebuild the reconstructed replay packs and the GDELT real-news packs
 	$(PY) scripts/build_replay_packs.py
+	$(PY) -m seismo.ingest.gdelt_replay
 
 results:            ## regenerate every number in the deck -> docs/results/ (+ manifest)
 	$(PY) -m seismo.eval.results

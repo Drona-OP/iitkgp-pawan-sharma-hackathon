@@ -234,7 +234,8 @@ def _sign(x: float, eps: float = 0.1) -> int:
 def main() -> int:
     settings = load_settings()
     universe = Universe.load(settings.path("universe.path"))
-    backend = make_backend(str(settings.get("sentiment.backend", "auto")), str(settings.get("sentiment.finbert_model")))
+    backend = make_backend(str(settings.get("sentiment.backend", "auto")), str(settings.get("sentiment.finbert_model")),
+                           settings.path("sentiment.target_model"))
     stress_engine = None
     shocks = Path(settings.get("module_b.shocks_path", "data/market/analog_shocks.csv"))
     shocks = shocks if shocks.is_absolute() else settings.root / shocks
@@ -313,6 +314,7 @@ def main() -> int:
             "First trigger vs reference": f"{p['trigger_vs_reference']} ({p['reference']})" if p["expected_trigger"] else "-",
             "Correct": "yes" if p["correct"] else "NO",
         } for p in real],
+        "sentiment_benchmark": _sentiment_report(settings),
         "real_news_first_triggers": {p["pack"]: {"at": p["first_trigger"], "headline": p["first_trigger_headline"]} for p in real},
         "stress_inputs": "data/market/analog_shocks.csv" if stress_engine else None,
     }
@@ -322,6 +324,19 @@ def main() -> int:
     (results / "results.md").write_text(to_markdown(out), encoding="utf-8")
     print(to_markdown(out))
     return 0
+
+
+def _sentiment_report(settings) -> dict | None:
+    path = settings.root / "docs" / "results" / "sentiment_report.json"
+    if not path.exists():
+        return None
+    rep = json.loads(path.read_text(encoding="utf-8"))
+    rows = [{"System": name, "Accuracy": f"{m['all']['accuracy']:.3f}", "Macro-F1": f"{m['all']['macro_f1']:.3f}",
+             "Macro-F1, multi-entity headlines": f"{m['multi_entity']['macro_f1']:.3f}",
+             "Macro-F1, conflicting headlines": f"{m['conflicting']['macro_f1']:.3f}"}
+            for name, m in rep["test"].items()]
+    return {"table": rows, "note": f"{rep['dataset']}; {rep['pairs']} entity pairs from {rep['headlines']} headlines. "
+                                   f"{rep['split']}. Published reference: {rep['published_reference']}"}
 
 
 def _table(rows: list[dict]) -> str:
@@ -345,6 +360,9 @@ def to_markdown(out: dict) -> str:
          "publication by 15-30 minutes. First triggers: " + "; ".join(
              f"{k.replace('_gdelt', '')} at {v['at']} on \"{v['headline']}\"" for k, v in out.get("real_news_first_triggers", {}).items() if v["at"])
          + ".") if out.get("real_news") else "",
+        "## Target sentiment on real labelled headlines (SEntFiN 1.0, held-out test)" if out.get("sentiment_benchmark") else "",
+        _table(out["sentiment_benchmark"]["table"]) if out.get("sentiment_benchmark") else "",
+        out["sentiment_benchmark"]["note"] if out.get("sentiment_benchmark") else "",
         "## Gold set", _table(out["gold"]["table"]), out["gold"]["note"],
         "## Latency (CPU)", _table([out["latency"]]),
     ]

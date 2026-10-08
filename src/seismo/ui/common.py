@@ -193,7 +193,7 @@ def sidebar_replay() -> None:
         if options:
             default = settings.path("replay.default_pack")
             index = options.index(default) if default in options else 0
-            pack = st.selectbox("Scenario pack", options, index=index, format_func=pack_label)
+            pack = st.selectbox("Scenario pack", options, index=index, format_func=pack_label, key="pack_choice")
             speed_label = st.select_slider("Clock speed", options=["60x", "600x", "3600x", "36000x", "Instant"], value="3600x")
             speed = 0.0 if speed_label == "Instant" else float(speed_label.rstrip("x"))
             left, right = st.columns(2)

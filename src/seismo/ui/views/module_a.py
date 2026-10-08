@@ -30,6 +30,10 @@ PALETTE = ["#4FA3A5", "#7A9CC6", "#E0B04C", "#C77DBA", "#6CC4A4", "#E8873A", "#9
 INDICES = {"US": "US: 20 S&P 100 names", "IN": "India: 16 Nifty 50 names"}
 
 
+def short(ticker: str) -> str:
+    return ticker.removesuffix(".NS")
+
+
 def recompute(kappa: float, strict: bool, half_life: float, market: str = "US") -> list[dict]:
     """Re-run Module A over the signals already in the store with different controls."""
     from seismo.module_a.consumer import ModuleAConsumer
@@ -88,7 +92,7 @@ def render() -> None:
     if movers:
         fig = go.Figure()
         for i, t in enumerate(sorted(movers, key=lambda t: min(s["weights"][t] - s["bench"][t] for s in snaps))):
-            fig.add_trace(go.Scatter(x=times, y=[s["weights"][t] for s in snaps], name=t, mode="lines+markers",
+            fig.add_trace(go.Scatter(x=times, y=[s["weights"][t] for s in snaps], name=short(t), mode="lines+markers",
                                      line={"shape": "hv", "width": 2.5, "color": PALETTE[i % len(PALETTE)]},
                                      hovertemplate=f"{t} %{{y:.2%}}<extra></extra>"))
             fig.add_trace(go.Scatter(x=[times[0], times[-1]], y=[last["bench"][t]] * 2, mode="lines", showlegend=False,
@@ -99,7 +103,7 @@ def render() -> None:
 
     fig = go.Figure()
     for i, t in enumerate(sorted(tickers, key=lambda t: -last["bench"][t])):
-        fig.add_trace(go.Scatter(x=times, y=[s["weights"][t] for s in snaps], name=t, stackgroup="w",
+        fig.add_trace(go.Scatter(x=times, y=[s["weights"][t] for s in snaps], name=short(t), stackgroup="w",
                                  line={"shape": "hv", "width": 0.5, "color": PALETTE[i % len(PALETTE)]},
                                  hovertemplate=f"{t} %{{y:.2%}}<extra></extra>"))
     base_layout(fig, "Index weights over time (stacked; steps at each rebalance)", 360)
@@ -110,7 +114,7 @@ def render() -> None:
     with left:
         active = {t: last["weights"][t] - last["bench"][t] for t in tickers}
         order = sorted(tickers, key=lambda t: active[t])
-        fig = go.Figure(go.Bar(x=[active[t] for t in order], y=order, orientation="h",
+        fig = go.Figure(go.Bar(x=[active[t] for t in order], y=[short(t) for t in order], orientation="h",
                                marker_color=[NEG if active[t] < 0 else POS for t in order],
                                hovertemplate="%{y} %{x:+.2%}<extra></extra>"))
         base_layout(fig, "Active weight vs benchmark (latest)", 460)
@@ -118,7 +122,7 @@ def render() -> None:
         st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
     with right:
         z = pd.DataFrame([s["index"] for s in snaps], index=[t.strftime("%m-%d %H:%M") for t in times])[tickers]
-        fig = go.Figure(go.Heatmap(z=z.T.values, x=z.index, y=tickers, zmin=-1, zmax=1,
+        fig = go.Figure(go.Heatmap(z=z.T.values, x=z.index, y=[short(t) for t in tickers], zmin=-1, zmax=1,
                                    colorscale=[[0, NEG], [0.5, "#1B2638"], [1, POS]],
                                    colorbar={"title": "Sentiment", "tickfont": {"color": MUTED}}))
         base_layout(fig, "Entity sentiment index at each snapshot", 460)
@@ -130,7 +134,7 @@ def render() -> None:
     labels = [f"{t:%m-%d %H:%M} UTC - {s['reason']}" for t, s in zip(times, snaps, strict=True)]
     pick = st.selectbox("Rebalance", range(len(snaps)), index=len(snaps) - 1, format_func=lambda i: labels[i])
     snap = snaps[pick]
-    attr = pd.DataFrame([{"Ticker": t, **{k: v for k, v in a.items() if k != "events"}, "Events": len(a["events"])}
+    attr = pd.DataFrame([{"Ticker": short(t), "_id": t, **{k: v for k, v in a.items() if k != "events"}, "Events": len(a["events"])}
                          for t, a in snap["attribution"].items()])
     attr["Change"] = attr["final"] - attr["prev"]
     attr = attr.reindex(attr["Change"].abs().sort_values(ascending=False).index)
@@ -148,9 +152,9 @@ def render() -> None:
             "breaker": st.column_config.CheckboxColumn("Breaker"),
         },
     )
-    movers = [t for t in attr["Ticker"] if snap["attribution"][t]["events"]]
+    movers = [t for t in attr["_id"] if snap["attribution"][t]["events"]]
     if movers:
-        who = st.selectbox("Events behind", movers)
+        who = st.selectbox("Events behind", movers, format_func=short)
         st.caption(f"{who}: shrunk z-score {snap['z'].get(who, 0.0):+.2f}, Grinold alpha (IC x volatility x z) "
                    f"{snap['alpha'].get(who, 0.0):+.2%}")
         for e in snap["attribution"][who]["events"]:

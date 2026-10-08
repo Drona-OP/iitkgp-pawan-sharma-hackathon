@@ -1,9 +1,11 @@
 """Entity-level sentiment: a pluggable model scored only on the sentences that mention each entity.
 
 Backends:
-- FinBertBackend: ProsusAI/finbert via transformers (install requirements-ml.txt).
-- LexiconBackend: a small, transparent finance lexicon used in CI and when FinBERT is absent.
-Day 2 swaps in the fine-tuned, target-masked model behind the same interface.
+- TargetModelBackend (default when models/sentiment_target.json exists): a target-masked model
+  trained on SEntFiN 1.0's entity-labelled headlines (seismo.nlp.target_model).
+- LexiconBackend: a small, transparent finance lexicon; CI uses it, and the trained model uses its
+  scores as three of its features.
+- FinBertBackend: ProsusAI/finbert via transformers, on request (install requirements-ml.txt).
 """
 
 from __future__ import annotations
@@ -185,17 +187,26 @@ class FinBertBackend:
         return probs
 
 
-def make_backend(kind: str = "auto", model_name: str = "ProsusAI/finbert") -> SentimentBackend:
+def make_backend(kind: str = "auto", model_name: str = "ProsusAI/finbert", target_model=None) -> SentimentBackend:
+    """auto: the trained target-masked model if its weights exist, else the lexicon."""
     kind = (kind or "auto").lower()
     if kind == "lexicon":
         return LexiconBackend()
     if kind == "finbert":
         return FinBertBackend(model_name)
-    try:
-        return FinBertBackend(model_name)
-    except Exception as exc:  # noqa: BLE001 - any import/download failure falls back
-        log.warning("FinBERT unavailable (%s); using the lexicon fallback.", exc.__class__.__name__)
-        return LexiconBackend()
+    if target_model is not None:
+        from pathlib import Path
+
+        from seismo.nlp.target_model import TargetModelBackend
+
+        if Path(target_model).exists():
+            try:
+                return TargetModelBackend(target_model)
+            except (KeyError, ValueError) as exc:
+                log.warning("Target model unreadable (%s); using the lexicon.", exc)
+    if kind == "target":
+        log.warning("models/sentiment_target.json missing: run `make sentiment`; using the lexicon.")
+    return LexiconBackend()
 
 
 CLAUSE_RE = re.compile(r"\s+(?:while|whereas|as|but|after|even as)\s+|\s*[;,]\s+(?:while|as|but)?\s*", re.IGNORECASE)
@@ -213,7 +224,8 @@ def _clauses(text: str, start: int, end: int) -> list[tuple[int, int]]:
 
 
 def entity_windows(
-    doc: Document, mention: EntityMention, limit: int = 3, others: list[tuple[int, int]] | None = None
+    doc: Document, mention: EntityMention, limit: int = 3, others: list[tuple[int, int]] | None = None,
+    split_clauses: bool = True,
 ) -> list[tuple[int, int]]:
     """Character ranges of the sentences that mention the entity (title counts as a sentence).
 
@@ -228,7 +240,7 @@ def entity_windows(
     for s, e in sentences:
         if not any(s <= p < e for p in starts):
             continue
-        if any(s <= o < e for o, _ in others):
+        if split_clauses and any(s <= o < e for o, _ in others):
             clauses = _clauses(text, s, e)
             mine = [(a, b) for a, b in clauses if any(a <= p < b for p in starts)]
             theirs = {(a, b) for a, b in clauses if any(a <= o < b for o, _ in others)}

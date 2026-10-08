@@ -8,7 +8,8 @@ universe:
   path: data/universe.csv
 
 sentiment:
-  backend: auto            # auto | finbert | lexicon
+  backend: auto            # auto (trained target model if present, else lexicon) | target | lexicon | finbert
+  target_model: models/sentiment_target.json   # written by `make sentiment` from SEntFiN 1.0
   finbert_model: ProsusAI/finbert
 
 linker:
