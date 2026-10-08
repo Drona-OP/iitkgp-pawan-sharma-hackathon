@@ -1,4 +1,9 @@
-"""Entity master: the 20-company universe (CSV) plus macro entities."""
+"""Entity master: the 20-company index universe, a watchlist of extra obligors, and macro entities.
+
+Index members (data/universe.csv) are what Module A trades. Watchlist names (data/watchlist.csv),
+such as the regional banks at the centre of March 2023, are linked by the engine and can be
+obligors in Module B, but are never index constituents.
+"""
 
 from __future__ import annotations
 
@@ -19,6 +24,8 @@ class Entity:
     cik: str | None = None
     sector: str | None = None
     cashtags: tuple[str, ...] = ()
+    domains: tuple[str, ...] = ()
+    index_member: bool = False
 
 
 # Macro entities let policy, commodity and market-wide news produce signals
@@ -50,10 +57,10 @@ class Universe:
         self._by_cik = {e.cik.lstrip("0"): e for e in entities if e.cik}
         self._by_cashtag = {tag.upper(): e for e in entities for tag in e.cashtags}
 
-    @classmethod
-    def load(cls, csv_path: str | Path) -> Universe:
+    @staticmethod
+    def _read(csv_path: Path, index_member: bool) -> list[Entity]:
         companies: list[Entity] = []
-        with Path(csv_path).open(encoding="utf-8", newline="") as fh:
+        with csv_path.open(encoding="utf-8", newline="") as fh:
             for row in csv.DictReader(fh):
                 ticker = row["ticker"].strip().upper()
                 cik = (row.get("cik") or "").strip()
@@ -67,8 +74,20 @@ class Universe:
                         cik=cik.zfill(10) if cik else None,
                         sector=(row.get("sector") or "").strip() or None,
                         cashtags=(ticker, *_split(row.get("extra_cashtags"))),
+                        domains=_split(row.get("domains")),
+                        index_member=index_member,
                     )
                 )
+        return companies
+
+    @classmethod
+    def load(cls, csv_path: str | Path, watchlist_path: str | Path | None = None) -> Universe:
+        csv_path = Path(csv_path)
+        companies = cls._read(csv_path, index_member=True)
+        watch = Path(watchlist_path) if watchlist_path else csv_path.with_name("watchlist.csv")
+        if watch.exists():
+            known = {c.entity_id for c in companies}
+            companies += [e for e in cls._read(watch, index_member=False) if e.entity_id not in known]
         return cls([*companies, *MACRO_ENTITIES])
 
     @property
@@ -77,6 +96,9 @@ class Universe:
 
     def companies(self) -> list[Entity]:
         return [e for e in self._by_id.values() if e.entity_type == "company"]
+
+    def index_members(self) -> list[Entity]:
+        return [e for e in self._by_id.values() if e.index_member]
 
     def macros(self) -> list[Entity]:
         return [e for e in self._by_id.values() if e.entity_type == "macro"]

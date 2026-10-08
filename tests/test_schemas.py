@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from seismo.schemas import (
+    SCHEMA_VERSION,
     Corroboration,
     EntityRef,
     EventClass,
@@ -30,7 +31,7 @@ def _signal(**overrides):
 def test_valid_signal_round_trips_json():
     sig = _signal()
     assert Signal.model_validate_json(sig.model_dump_json()) == sig
-    assert sig.schema_version == "1.0"
+    assert sig.schema_version == SCHEMA_VERSION == "1.1"
 
 
 @pytest.mark.parametrize("field,value", [("sentiment_score", 1.5), ("impact_score", 0), ("impact_score", 11), ("novelty", 101)])

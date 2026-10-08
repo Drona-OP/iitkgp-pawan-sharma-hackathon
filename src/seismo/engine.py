@@ -1,21 +1,25 @@
-"""The core engine: one Document in, one document-grain Signal per linked entity out.
+"""The core engine: one Document in; document-grain and event-grain signals out.
 
-Stages: event classification -> entity linking -> entity-window sentiment -> credibility and
-authority -> novelty -> impact. Every evidence span is an exact substring of the source text.
+Stages: event classification -> entity linking -> entity-window sentiment -> credibility,
+authority and lookalike checks -> story clustering (syndication, paraphrase, coordination,
+24-hour novelty chains) -> denial matching -> impact. Every evidence span is an exact substring
+of the source text.
 """
 
 from __future__ import annotations
 
 import time
+from dataclasses import dataclass, field
 
 from seismo.config import Settings, load_settings
-from seismo.nlp import impact as impact_mod
-from seismo.nlp import novelty as novelty_mod
-from seismo.nlp.credibility import credibility, is_authoritative
+from seismo.nlp import clusters as clusters_mod
+from seismo.nlp import denial as denial_mod
+from seismo.nlp.clusters import Cluster, StoryClusterer
+from seismo.nlp.credibility import credibility, is_authoritative, is_lookalike
+from seismo.nlp.denial import is_denial
 from seismo.nlp.events import classify_event
-from seismo.nlp.impact import heuristic_impact
+from seismo.nlp.impact import ImpactFeatures, PriorImpact, load_impact_model
 from seismo.nlp.linker import EntityLinker
-from seismo.nlp.novelty import NoveltyTracker
 from seismo.nlp.sentiment import (
     SentimentBackend,
     average,
@@ -31,22 +35,42 @@ from seismo.schemas import (
     EventLabel,
     Evidence,
     Signal,
+    SourceType,
     stable_id,
 )
+from seismo.signals.events import EventBuilder
 from seismo.universe import Universe
 
-VERSION = "engine-0.1"
+VERSION = "engine-0.2"
 MACRO_FALLBACK = "MACRO:MARKET"
 MAX_SPAN = 280
 
 
+@dataclass
+class EngineResult:
+    doc_signals: list[Signal] = field(default_factory=list)
+    event_signals: list[Signal] = field(default_factory=list)
+
+    @property
+    def all(self) -> list[Signal]:
+        return [*self.doc_signals, *self.event_signals]
+
+
 class Engine:
-    def __init__(self, universe: Universe, backend: SentimentBackend, settings: Settings | None = None) -> None:
+    def __init__(
+        self,
+        universe: Universe,
+        backend: SentimentBackend,
+        settings: Settings | None = None,
+        impact_model: PriorImpact | None = None,
+    ) -> None:
         settings = settings or load_settings()
         self.universe = universe
         self.backend = backend
         self.linker = EntityLinker(universe, float(settings.get("linker.min_link_score", 0.6)))
-        self.novelty = NoveltyTracker(window_hours=float(settings.get("novelty.window_hours", 24.0)))
+        self.clusters = StoryClusterer(window_hours=float(settings.get("novelty.window_hours", 24.0)))
+        self.impact = impact_model or load_impact_model(settings.path("impact.model_path"))
+        self.events = EventBuilder(self.impact)
 
     def _macro_fallback(self, doc: Document, event: EventLabel) -> list[EntityMention]:
         """Macro or geopolitical news that names no tracked entity still moves the market."""
@@ -63,22 +87,42 @@ class Engine:
             )
         ]
 
+    def versions(self, event: EventLabel) -> dict[str, str]:
+        return {
+            "engine": VERSION,
+            "linker": EntityLinker.VERSION,
+            "sentiment": self.backend.name,
+            "event": event.method,
+            "novelty": clusters_mod.VERSION,
+            "impact": self.impact.name,
+            "denial": denial_mod.VERSION,
+        }
+
     def process(self, doc: Document) -> list[Signal]:
+        """Document-grain signals only (the /v1/analyze contract)."""
+        return self.process_full(doc).doc_signals
+
+    def process_full(self, doc: Document) -> EngineResult:
         t0 = time.perf_counter()
         text = doc.text
         if not text.strip():
-            return []
+            return EngineResult()
         event = classify_event(doc)
         mentions = self.linker.link(doc) or self._macro_fallback(doc, event)
         if not mentions:
-            return []
+            return EngineResult()
 
         windows = [entity_windows(doc, m) for m in mentions]
         flat = [text[s:e] for ws in windows for s, e in ws]
         probs = self.backend.predict(flat)
-        cred = credibility(doc.publisher, doc.source_type)
+        cred = credibility(doc.publisher, doc.source_type, doc.author)
         authoritative = is_authoritative(doc.publisher, doc.source_type)
+        lookalike = is_lookalike(doc.publisher, doc.author)
+        social = doc.source_type == SourceType.SOCIAL
+        versions = self.versions(event)
 
+        result = EngineResult()
+        touched: dict[str, Cluster] = {}
         drafts = []
         cursor = 0
         for mention, ws in zip(mentions, windows, strict=True):
@@ -87,22 +131,45 @@ class Engine:
             score = max(-1.0, min(1.0, p[2] - p[0]))
             s0, e0 = ws[0]
             span = text[s0:e0].strip()[:MAX_SPAN] or text[:MAX_SPAN]
-            novelty = self.novelty.observe(mention.entity_id, doc)
-            impact, _ = heuristic_impact(event.primary, score, cred, mention.relevance, novelty)
-            drafts.append((mention, score, confidence(p), span, novelty, impact))
+            entity = self.universe.get(mention.entity_id)
+            flags: list[str] = []
+            if lookalike:
+                flags.append("lookalike_source")
+            cluster_id = None
+            novelty = 100
+            if entity is not None and is_denial(doc, entity.domains):
+                flags.append("official_denial")
+                target = self.clusters.best_match(mention.entity_id, doc)
+                if target is not None:
+                    self.clusters.dispute(target, doc)
+                    touched[target.cluster_id] = target
+                    cluster_id = target.cluster_id
+            else:
+                cluster, member, novelty = self.clusters.assign(
+                    mention.entity_id, doc, event.primary, event.confidence
+                )
+                cluster_id = cluster.cluster_id
+                touched[cluster.cluster_id] = cluster
+                if member.syndicated:
+                    flags.append("syndicated_copy")
+            impact, _ = self.impact.score(
+                ImpactFeatures(
+                    event=event.primary, sentiment=score, publishers=0 if social else 1,
+                    social_authors=1 if social else 0, authoritative=authoritative,
+                    novelty=novelty, relevance=mention.relevance, subtype=event.subtype,
+                )
+            )
+            if cluster_id is not None and "official_denial" not in flags:
+                member = self.clusters.get(cluster_id).members[-1]  # type: ignore[union-attr]
+                member.sentiment, member.sent_conf = score, confidence(p)
+                member.relevance, member.credibility = mention.relevance, cred
+                member.authoritative, member.impact, member.span = authoritative, impact, span
+                member.subtype, member.lookalike = event.subtype, lookalike
+            drafts.append((mention, score, confidence(p), span, novelty, impact, cluster_id, flags))
 
         engine_ms = round((time.perf_counter() - t0) * 1000, 3)
-        versions = {
-            "engine": VERSION,
-            "linker": EntityLinker.VERSION,
-            "sentiment": self.backend.name,
-            "event": event.method,
-            "novelty": novelty_mod.VERSION,
-            "impact": impact_mod.VERSION,
-        }
-        signals = []
-        for mention, score, conf, span, novelty, impact in drafts:
-            signals.append(
+        for mention, score, conf, span, novelty, impact, cluster_id, flags in drafts:
+            result.doc_signals.append(
                 Signal(
                     signal_id=stable_id("sig_doc", mention.entity_id, doc.doc_id),
                     grain="document",
@@ -115,9 +182,10 @@ class Engine:
                     novelty=novelty,
                     relevance=mention.relevance,
                     corroboration=Corroboration(
-                        independent_publishers=1,
+                        independent_publishers=0 if social else 1,
                         source_types=[doc.source_type],
                         authoritative=authoritative,
+                        social_authors=1 if social else 0,
                     ),
                     evidence=[
                         Evidence(
@@ -128,9 +196,18 @@ class Engine:
                     model_versions=versions,
                     latency_ms={"engine": engine_ms},
                     synthetic=doc.synthetic,
+                    cluster_id=cluster_id,
+                    flags=flags,
                 )
             )
-        return signals
+        for cluster in touched.values():
+            result.event_signals.append(
+                self.events.build(
+                    cluster, self.universe.ref(cluster.entity_id), doc.published_at, versions,
+                    latency_ms={"engine": engine_ms}, synthetic=doc.synthetic,
+                )
+            )
+        return result
 
 
 def build_engine(settings: Settings | None = None, backend: SentimentBackend | None = None) -> Engine:

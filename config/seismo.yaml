@@ -14,6 +14,18 @@ sentiment:
 linker:
   min_link_score: 0.6      # drop entity links below this disambiguation confidence
 
+impact:
+  model_path: models/impact_calibrated.json   # written by `make impact`; absent -> logit prior
+
+scenarios:
+  path: config/scenarios.yaml
+
+gate:                      # Module B auto-trigger gate (signals/gate.py)
+  min_impact: 8
+  min_confidence: 0.7
+  min_publishers: 3
+  window_minutes: 60
+
 novelty:
   window_hours: 24         # RavenPack-style 24-hour novelty chains
 

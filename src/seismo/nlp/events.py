@@ -66,6 +66,7 @@ RULES: tuple[Rule, ...] = (
     _r(E.MACROECONOMIC, "INFLATION", 2.0, r"\binflation\b|\bCPI\b|\bconsumer prices\b"),
     _r(E.MACROECONOMIC, "GROWTH_JOBS", 2.0, r"\bGDP\b|\brecession\b|\bjobs report\b|\bpayrolls\b|\bunemployment\b"),
     _r(E.MACROECONOMIC, "RATES_MARKET", 1.5, r"\btreasury yields?\b|\bbond yields?\b|\b10-year yield\b"),
+    _r(E.MACROECONOMIC, "PANDEMIC", 2.5, r"\bpandemic\b|\boutbreak\b|\blockdowns?\b|\bcoronavirus\b|\bCOVID(?:-19)?\b"),
     _r(E.MACROECONOMIC, "COMMODITIES", 2.0, r"\boutput cuts?\b|\boil prices?\b|\bcrude\b|\bOPEC\b"),
     _r(E.MA_CORPORATE_ACTION, "MERGER_ACQUISITION", 2.5, r"\bacquir(?:e|es|ed|ing)\b|\bacquisition\b|\bmerger\b|\btakeover\b|\bbuyout\b|\bdeal to buy\b"),
     _r(E.MA_CORPORATE_ACTION, "DIVESTITURE", 2.0, r"\bdivest\w*|\bspin[- ]?off\b|\bsell (?:a |its |the )?stake\b|\bsell (?:its|the) \w+ (?:unit|division|business)\b"),

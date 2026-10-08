@@ -20,6 +20,9 @@ DEFAULTS: dict[str, Any] = {
     "universe": {"path": "data/universe.csv"},
     "sentiment": {"backend": "auto", "finbert_model": "ProsusAI/finbert"},
     "linker": {"min_link_score": 0.6},
+    "impact": {"model_path": "models/impact_calibrated.json"},
+    "scenarios": {"path": "config/scenarios.yaml"},
+    "gate": {"min_impact": 8, "min_confidence": 0.7, "min_publishers": 3, "window_minutes": 60},
     "novelty": {"window_hours": 24.0},
     "aggregation": {"half_life_hours": 6.0, "impact_window_hours": 6.0, "history_hours": 72.0},
     "edgar": {

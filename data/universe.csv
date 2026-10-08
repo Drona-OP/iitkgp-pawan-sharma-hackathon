@@ -1,21 +1,21 @@
-ticker,name,cik,sector,aliases,ambiguous_aliases,extra_cashtags
-AAPL,Apple Inc.,0000320193,Information Technology,Apple Inc|iPhone|iPad|MacBook|App Store,Apple,
-MSFT,Microsoft Corp.,0000789019,Information Technology,Microsoft|Azure|Xbox|LinkedIn,Windows,
-NVDA,NVIDIA Corp.,0001045810,Information Technology,NVIDIA|Nvidia|GeForce|CUDA,,
-GOOGL,Alphabet Inc.,0001652044,Communication Services,Alphabet Inc|Google|YouTube|Waymo,Alphabet,GOOG
-META,Meta Platforms Inc.,0001326801,Communication Services,Meta Platforms|Facebook|Instagram|WhatsApp,Meta,
-AMZN,Amazon.com Inc.,0001018724,Consumer Discretionary,Amazon.com|AWS|Amazon Web Services,Amazon,
-TSLA,Tesla Inc.,0001318605,Consumer Discretionary,Tesla|Cybertruck,,
-JPM,JPMorgan Chase & Co.,0000019617,Financials,JPMorgan|JP Morgan|J.P. Morgan|JPMorgan Chase,Chase,
-BAC,Bank of America Corp.,0000070858,Financials,Bank of America|BofA,,
-LLY,Eli Lilly and Co.,0000059478,Health Care,Eli Lilly|Mounjaro|Zepbound,Lilly,
-UNH,UnitedHealth Group Inc.,0000731766,Health Care,UnitedHealth|UnitedHealthcare|Optum,,
-XOM,Exxon Mobil Corp.,0000034088,Energy,Exxon Mobil|ExxonMobil|Exxon,,
-CVX,Chevron Corp.,0000093410,Energy,Chevron,,
-CAT,Caterpillar Inc.,0000018230,Industrials,Caterpillar Inc,Caterpillar,
-BA,Boeing Co.,0000012927,Industrials,Boeing|737 MAX|787 Dreamliner,,
-PG,Procter & Gamble Co.,0000080424,Consumer Staples,Procter & Gamble|Procter and Gamble|P&G,,
-KO,Coca-Cola Co.,0000021344,Consumer Staples,Coca-Cola|Coca Cola,Coke,
-NEE,NextEra Energy Inc.,0000753308,Utilities,NextEra|Florida Power & Light,,
-LIN,Linde plc,0001707925,Materials,Linde plc,Linde,
-AMT,American Tower Corp.,0001053507,Real Estate,American Tower,,
+ticker,name,cik,sector,aliases,ambiguous_aliases,extra_cashtags,domains
+AAPL,Apple Inc.,0000320193,Information Technology,Apple Inc|iPhone|iPad|MacBook|App Store,Apple,,apple.com
+MSFT,Microsoft Corp.,0000789019,Information Technology,Microsoft|Azure|Xbox|LinkedIn,Windows,,microsoft.com|news.microsoft.com
+NVDA,NVIDIA Corp.,0001045810,Information Technology,NVIDIA|Nvidia|GeForce|CUDA,,,nvidia.com|nvidianews.nvidia.com
+GOOGL,Alphabet Inc.,0001652044,Communication Services,Alphabet Inc|Google|YouTube|Waymo,Alphabet,GOOG,abc.xyz|google.com|blog.google
+META,Meta Platforms Inc.,0001326801,Communication Services,Meta Platforms|Facebook|Instagram|WhatsApp,Meta,,meta.com|about.fb.com|about.meta.com
+AMZN,Amazon.com Inc.,0001018724,Consumer Discretionary,Amazon.com|AWS|Amazon Web Services,Amazon,,amazon.com|aboutamazon.com
+TSLA,Tesla Inc.,0001318605,Consumer Discretionary,Tesla|Cybertruck,,,tesla.com
+JPM,JPMorgan Chase & Co.,0000019617,Financials,JPMorgan|JP Morgan|J.P. Morgan|JPMorgan Chase,Chase,,jpmorganchase.com|jpmorgan.com
+BAC,Bank of America Corp.,0000070858,Financials,Bank of America|BofA,,,bankofamerica.com
+LLY,Eli Lilly and Co.,0000059478,Health Care,Eli Lilly|Mounjaro|Zepbound,Lilly,,lilly.com
+UNH,UnitedHealth Group Inc.,0000731766,Health Care,UnitedHealth|UnitedHealthcare|Optum,,,unitedhealthgroup.com
+XOM,Exxon Mobil Corp.,0000034088,Energy,Exxon Mobil|ExxonMobil|Exxon,,,exxonmobil.com
+CVX,Chevron Corp.,0000093410,Energy,Chevron,,,chevron.com
+CAT,Caterpillar Inc.,0000018230,Industrials,Caterpillar Inc,Caterpillar,,caterpillar.com
+BA,Boeing Co.,0000012927,Industrials,Boeing|737 MAX|787 Dreamliner,,,boeing.com
+PG,Procter & Gamble Co.,0000080424,Consumer Staples,Procter & Gamble|Procter and Gamble|P&G,,,pg.com
+KO,Coca-Cola Co.,0000021344,Consumer Staples,Coca-Cola|Coca Cola,Coke,,coca-colacompany.com
+NEE,NextEra Energy Inc.,0000753308,Utilities,NextEra|Florida Power & Light,,,nexteraenergy.com
+LIN,Linde plc,0001707925,Materials,Linde plc,Linde,,linde.com
+AMT,American Tower Corp.,0001053507,Real Estate,American Tower,,,americantower.com

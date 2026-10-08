@@ -1,0 +1,70 @@
+# Scenario library for Module B. Each event subtype maps to a historical crisis window; the shock
+# vector is each factor's largest move inside that window, computed from data/market/*.csv by
+# seismo.module_b.factors. No shock size is typed by hand.
+
+scenarios:
+  russia_ukraine_2022:
+    label: "Russia-Ukraine invasion"
+    start: 2022-02-18
+    end: 2022-03-08
+    captures: "Oil spike, equity drawdown, flight to quality"
+  tariff_2025:
+    label: "US tariff shock"
+    start: 2025-04-02
+    end: 2025-04-08
+    captures: "Equity crash, volatility spike, bank stocks hit"
+  svb_2023:
+    label: "SVB bank run"
+    start: 2023-03-08
+    end: 2023-03-17
+    captures: "Bank equity collapse, front-end rally, spread widening"
+  lehman_2008:
+    label: "Lehman / systemic credit"
+    start: 2008-09-12
+    end: 2008-10-10
+    captures: "Extreme spread widening, deep equity losses"
+  rate_shock_2022:
+    label: "Hot CPI and a 75 bp hike"
+    start: 2022-06-10
+    end: 2022-06-16
+    captures: "Curve shifts up, equities fall"
+  covid_2020:
+    label: "Pandemic crash"
+    start: 2020-02-19
+    end: 2020-03-23
+    captures: "Broad crash, volatility and spread blow-out"
+  deepseek_2025:
+    label: "DeepSeek competitive shock"
+    start: 2025-01-24
+    end: 2025-01-27
+    captures: "Sector-specific idiosyncratic shock (semiconductors)"
+
+# Event class / subtype -> scenario. "CLASS/*" is the class-level fallback.
+event_map:
+  GEOPOLITICAL/ARMED_CONFLICT: russia_ukraine_2022
+  GEOPOLITICAL/SANCTIONS: russia_ukraine_2022
+  GEOPOLITICAL/TRADE_WAR: tariff_2025
+  CREDIT_EVENT/BANK_RUN: svb_2023
+  CREDIT_EVENT/LIQUIDITY_STRESS: svb_2023
+  CREDIT_EVENT/BANKRUPTCY: lehman_2008
+  CREDIT_EVENT/DEFAULT: lehman_2008
+  CREDIT_EVENT/ACCELERATION_TRIGGER: lehman_2008
+  CREDIT_EVENT/DOWNGRADE: lehman_2008
+  MACROECONOMIC/MONETARY_POLICY: rate_shock_2022
+  MACROECONOMIC/INFLATION: rate_shock_2022
+  MACROECONOMIC/PANDEMIC: covid_2020
+  PRODUCT_STRATEGY/COMPETITIVE_THREAT: deepseek_2025
+
+# Severity: the analog is scaled by impact, and the Vasicek systematic factor Z deepens with it.
+severity:
+  multiplier: {8: 0.75, 9: 1.0, 10: 1.25}
+  vasicek_z: {8: -1.5, 9: -2.0, 10: -2.33}
+
+# Idiosyncratic overlay for the obligor or sector at the centre of the event.
+idiosyncratic:
+  CREDIT_EVENT: {notches: 3, equity_shock: -0.5}
+  PRODUCT_STRATEGY: {notches: 1, equity_shock: -0.15}
+  default: {notches: 1, equity_shock: -0.1}
+
+# Probability weights for the multi-scenario ECL (RBI-style base / adverse / severe).
+ecl_weights: {base: 0.5, adverse: 0.3, severe: 0.2}

@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"  # 1.1 adds cluster_id, status, flags and richer corroboration (additive)
 
 
 def utcnow() -> datetime:
@@ -111,10 +111,15 @@ class EventLabel(BaseModel):
 
 
 class Corroboration(BaseModel):
-    independent_publishers: int = Field(ge=0)
+    independent_publishers: int = Field(ge=0, description="Distinct owners of news and filings reporting the story")
     source_types: list[SourceType] = Field(default_factory=list)
     authoritative: bool = False
     disputed: bool = False
+    publishers_60m: int = Field(default=0, ge=0, description="Independent publishers in the last 60 minutes")
+    social_authors: int = Field(default=0, ge=0)
+    coordinated: bool = Field(default=False, description="Near-identical posts from many accounts detected")
+    publishers: list[str] = Field(default_factory=list)
+    first_seen: datetime | None = None
 
 
 class Evidence(BaseModel):
@@ -147,8 +152,35 @@ class Signal(BaseModel):
     model_versions: dict[str, str] = Field(default_factory=dict)
     latency_ms: dict[str, float] = Field(default_factory=dict)
     synthetic: bool = False
+    cluster_id: str | None = None
+    status: Literal["active", "disputed", "retracted"] = "active"
+    flags: list[str] = Field(default_factory=list)
 
     @field_validator("as_of")
     @classmethod
     def _to_utc(cls, value: datetime) -> datetime:
         return ensure_utc(value)
+
+
+class GateCheck(BaseModel):
+    name: str
+    passed: bool
+    detail: str
+
+
+class GateDecision(BaseModel):
+    """Whether an event may trigger a stress test automatically (Module B's trigger gate)."""
+
+    decision_id: str
+    as_of: datetime
+    signal_id: str
+    cluster_id: str | None = None
+    entity_id: str
+    event: EventLabel
+    impact_score: int
+    decision: Literal["TRIGGER", "REVIEW", "LOG", "RETRACT"]
+    checks: list[GateCheck] = Field(default_factory=list)
+    naive_decision: Literal["TRIGGER", "LOG"] = "LOG"
+    scenario: str | None = None
+    headline: str | None = None
+    synthetic: bool = False

@@ -1,18 +1,29 @@
-"""Wires adapters -> bus (docs.raw) -> engine -> bus (signals.v1) -> store. Same code live and replay."""
+"""Wires adapters -> bus (docs.raw) -> engine -> bus (signals.v1) -> store and consumers.
+
+Same code live and replay. Consumers are anything with ``on_signal(signal)``: the trigger gate,
+Module A (tactical rebalancer) and Module B (stress test) all subscribe to the one signal bus.
+"""
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import time
+from typing import Protocol
 
 from seismo.bus import TOPIC_DOCS, TOPIC_SIGNALS, Bus, InMemoryBus
 from seismo.engine import Engine
 from seismo.ingest.base import Adapter
 from seismo.ingest.replay import Recorder
+from seismo.schemas import Signal
 from seismo.signals.aggregator import EntityAggregator
 from seismo.store.sqlite import SQLiteStore
 
 log = logging.getLogger(__name__)
+
+
+class Consumer(Protocol):
+    def on_signal(self, sig: Signal) -> object: ...
 
 
 async def run_pipeline(
@@ -23,11 +34,13 @@ async def run_pipeline(
     bus: Bus | None = None,
     recorder: Recorder | None = None,
     stop_after_seconds: float | None = None,
+    consumers: list[Consumer] | None = None,
 ) -> dict[str, int]:
     bus = bus or InMemoryBus()
     docs = bus.subscribe(TOPIC_DOCS)
     signals = bus.subscribe(TOPIC_SIGNALS)
-    counts = {"documents": 0, "signals": 0}
+    counts = {"documents": 0, "signals": 0, "events": 0}
+    consumers = list(consumers or [])
 
     async def produce(adapter: Adapter) -> None:
         try:
@@ -40,11 +53,18 @@ async def run_pipeline(
 
     async def process() -> None:
         async for _, doc in docs:
+            t0 = time.perf_counter()
             store.put_document(doc)
             if recorder is not None:
                 recorder.write(doc)
             counts["documents"] += 1
-            for sig in await asyncio.to_thread(engine.process, doc):
+            result = await asyncio.to_thread(engine.process_full, doc)
+            pipeline_ms = round((time.perf_counter() - t0) * 1000, 3)
+            for sig in result.doc_signals:
+                sig.latency_ms["pipeline"] = pipeline_ms
+                await bus.publish(TOPIC_SIGNALS, sig.entity.id, sig)
+            for sig in result.event_signals:
+                sig.latency_ms["pipeline"] = pipeline_ms
                 await bus.publish(TOPIC_SIGNALS, sig.entity.id, sig)
                 await bus.publish(TOPIC_SIGNALS, sig.entity.id, aggregator.update(sig))
         await bus.end(TOPIC_SIGNALS)
@@ -54,6 +74,13 @@ async def run_pipeline(
             store.put_signal(sig)
             if sig.grain == "document":
                 counts["signals"] += 1
+            elif sig.grain == "event":
+                counts["events"] += 1
+            for consumer in consumers:
+                try:
+                    consumer.on_signal(sig)
+                except Exception:  # noqa: BLE001 - a consumer bug must not stop the engine
+                    log.exception("Consumer %s failed", type(consumer).__name__)
 
     producers = [asyncio.create_task(produce(a), name=f"adapter:{a.name}") for a in adapters]
     processor = asyncio.create_task(process(), name="engine")

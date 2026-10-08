@@ -28,11 +28,27 @@ CREATE TABLE IF NOT EXISTS signals (
     sentiment REAL NOT NULL,
     event_primary TEXT NOT NULL,
     engine_ms REAL,
-    json TEXT NOT NULL
+    json TEXT NOT NULL,
+    cluster_id TEXT,
+    status TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_signals_grain_entity ON signals (grain, entity_id);
 CREATE INDEX IF NOT EXISTS ix_signals_as_of ON signals (as_of);
+CREATE TABLE IF NOT EXISTS records (
+    seq INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL,
+    key TEXT NOT NULL,
+    as_of TEXT NOT NULL,
+    json TEXT NOT NULL,
+    UNIQUE (kind, key)
+);
+CREATE INDEX IF NOT EXISTS ix_records_kind ON records (kind, as_of);
 """
+
+MIGRATIONS = (
+    "ALTER TABLE signals ADD COLUMN cluster_id TEXT",
+    "ALTER TABLE signals ADD COLUMN status TEXT",
+)
 
 
 def _iso(ts: datetime) -> str:
@@ -47,6 +63,11 @@ class SQLiteStore:
         self._conn = sqlite3.connect(self.path, check_same_thread=False, timeout=30)
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA synchronous=NORMAL")
+        self._conn.executescript(SCHEMA.split("CREATE INDEX")[0])
+        cols = {r[1] for r in self._conn.execute("PRAGMA table_info(signals)").fetchall()}
+        for stmt in MIGRATIONS:
+            if stmt.split()[-2] not in cols:
+                self._conn.execute(stmt)
         self._conn.executescript(SCHEMA)
         self._conn.commit()
 
@@ -58,6 +79,7 @@ class SQLiteStore:
         with self._lock:
             self._conn.execute("DELETE FROM signals")
             self._conn.execute("DELETE FROM documents")
+            self._conn.execute("DELETE FROM records")
             self._conn.commit()
 
     def put_document(self, doc: Document) -> None:
@@ -73,14 +95,14 @@ class SQLiteStore:
         with self._lock:
             self._conn.execute(
                 "INSERT INTO signals (signal_id, grain, entity_id, as_of, impact, sentiment, "
-                "event_primary, engine_ms, json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "event_primary, engine_ms, json, cluster_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(signal_id) DO UPDATE SET impact=excluded.impact, "
                 "sentiment=excluded.sentiment, event_primary=excluded.event_primary, "
-                "engine_ms=excluded.engine_ms, json=excluded.json",
+                "engine_ms=excluded.engine_ms, json=excluded.json, status=excluded.status",
                 (
                     sig.signal_id, sig.grain, sig.entity.id, _iso(sig.as_of), sig.impact_score,
                     sig.sentiment_score, sig.event.primary.value, sig.latency_ms.get("engine"),
-                    sig.model_dump_json(),
+                    sig.model_dump_json(), sig.cluster_id, sig.status,
                 ),
             )
             self._conn.commit()
@@ -136,6 +158,36 @@ class SQLiteStore:
         with self._lock:
             rows = self._conn.execute(sql).fetchall()
         return [Signal.model_validate_json(r[0]) for r in rows]
+
+    def latest_events(self, limit: int = 200) -> list[Signal]:
+        """The newest event-grain signal per story cluster, most severe first."""
+        sql = (
+            "SELECT s.json FROM signals s JOIN ("
+            "  SELECT cluster_id, MAX(seq) AS seq FROM signals WHERE grain = 'event' GROUP BY cluster_id"
+            ") latest ON latest.seq = s.seq ORDER BY s.as_of DESC LIMIT ?"
+        )
+        with self._lock:
+            rows = self._conn.execute(sql, (limit,)).fetchall()
+        return [Signal.model_validate_json(r[0]) for r in rows]
+
+    def put_record(self, kind: str, key: str, as_of: datetime, payload: str) -> None:
+        """Module outputs (gate decisions, index weights, stress runs) as JSON records."""
+        with self._lock:
+            self._conn.execute(
+                "INSERT INTO records (kind, key, as_of, json) VALUES (?, ?, ?, ?) "
+                "ON CONFLICT(kind, key) DO UPDATE SET as_of=excluded.as_of, json=excluded.json",
+                (kind, key, _iso(as_of), payload),
+            )
+            self._conn.commit()
+
+    def records(self, kind: str, limit: int = 1000, newest_first: bool = False) -> list[str]:
+        order = "DESC" if newest_first else "ASC"
+        with self._lock:
+            rows = self._conn.execute(
+                f"SELECT json FROM records WHERE kind = ? ORDER BY as_of {order}, seq {order} LIMIT ?",
+                (kind, limit),
+            ).fetchall()
+        return [r[0] for r in rows]
 
     def stats(self) -> dict[str, float | int]:
         with self._lock:

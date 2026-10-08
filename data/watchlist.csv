@@ -1,0 +1,5 @@
+ticker,name,cik,sector,aliases,ambiguous_aliases,extra_cashtags,domains
+SIVB,SVB Financial Group,,Financials,Silicon Valley Bank|SVB Financial|SVB,,,svb.com
+FRC,First Republic Bank,,Financials,First Republic Bank|First Republic,,,firstrepublic.com
+SBNY,Signature Bank,,Financials,Signature Bank,,,signatureny.com
+CS,Credit Suisse Group AG,,Financials,Credit Suisse,,,credit-suisse.com

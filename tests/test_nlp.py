@@ -1,6 +1,6 @@
 from seismo.nlp.credibility import credibility, is_authoritative
 from seismo.nlp.events import classify_event
-from seismo.nlp.impact import heuristic_impact
+from seismo.nlp.impact import ImpactFeatures, PriorImpact, heuristic_impact
 from seismo.nlp.sentiment import LexiconBackend, confidence, entity_windows
 from seismo.schemas import EntityMention, EventClass, SourceType
 
@@ -72,11 +72,22 @@ def test_credibility_and_authority():
 
 
 def test_impact_is_monotone_and_bounded():
-    weak, _ = heuristic_impact(EventClass.CREDIT_EVENT, -0.1, 0.6, 80, 100)
-    strong, _ = heuristic_impact(EventClass.CREDIT_EVENT, -0.9, 0.6, 80, 100)
-    social, _ = heuristic_impact(EventClass.CREDIT_EVENT, -0.9, 0.3, 80, 100)
-    wire, _ = heuristic_impact(EventClass.CREDIT_EVENT, -0.9, 0.95, 80, 100)
-    assert weak < strong and social < wire
-    top, _ = heuristic_impact(EventClass.CREDIT_EVENT, -1.0, 1.0, 100, 100)
-    low, _ = heuristic_impact(EventClass.OTHER, 0.0, 0.3, 0, 0)
-    assert top == 10 and low == 1
+    def imp(**kw):
+        base = dict(event=EventClass.CREDIT_EVENT, sentiment=-0.9, publishers=1, social_authors=0,
+                    authoritative=False, novelty=100, relevance=80)
+        base.update(kw)
+        return PriorImpact().score(ImpactFeatures(**base))[0]
+
+    assert imp(sentiment=-0.1) < imp(sentiment=-0.9)
+    assert imp(publishers=1) <= imp(publishers=4) <= imp(publishers=12)
+    assert imp(social_authors=0) <= imp(social_authors=40)
+    assert imp(event=EventClass.OTHER) < imp(event=EventClass.CREDIT_EVENT)
+    assert imp(sentiment=-1.0, publishers=10, social_authors=40, authoritative=True, relevance=100) == 10
+    assert imp(event=EventClass.OTHER, sentiment=0.0, publishers=0, novelty=0, relevance=0) == 1
+
+
+def test_credibility_is_not_part_of_impact():
+    """Impact is "how big if true"; the gate decides whether it is true."""
+    a, _ = heuristic_impact(EventClass.CREDIT_EVENT, -0.9, 0.3, 80, 100)
+    b, _ = heuristic_impact(EventClass.CREDIT_EVENT, -0.9, 0.95, 80, 100)
+    assert a == b
