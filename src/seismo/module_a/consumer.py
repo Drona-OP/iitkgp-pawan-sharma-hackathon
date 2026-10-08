@@ -72,7 +72,7 @@ class ModuleAConsumer:
             bench = capped_cap_weights(caps or {e.entity_id: 1.0 for e in members}, 0.15)
             return {
                 e.entity_id: Holding(e.entity_id, e.sector or "Unknown", bench.get(e.entity_id, 0.0),
-                                     (vols or {}).get(e.entity_id, FALLBACK_VOL))
+                                     (vols or {}).get(e.entity_id, FALLBACK_VOL), e.group)
                 for e in members
             }
 

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08 23:11 UTC",
+  "generated_at": "2026-10-08 23:12 UTC",
   "sentiment_backend": "sentfin-target-lr-v1",
   "impact_model": "event-study-8k-v1",
   "scorecard": [
@@ -145,9 +145,9 @@
   },
   "latency": {
     "documents": 152,
-    "engine_p50_ms": 1.31,
-    "engine_p95_ms": 2.86,
-    "docs_per_second": 661.2,
+    "engine_p50_ms": 1.37,
+    "engine_p95_ms": 2.85,
+    "docs_per_second": 674.4,
     "llm_calls": 0
   },
   "module_a": {
@@ -190,20 +190,20 @@
   },
   "module_a_in": {
     "adani_2023": {
-      "rebalances": 4,
-      "turnover": 0.2703,
-      "naive_turnover": 1.8116,
+      "rebalances": 6,
+      "turnover": 0.2465,
+      "naive_turnover": 1.3446,
       "adani_before_open": {
         "ADANIENT.NS": {
-          "weight": 0.0125,
-          "bench": 0.0625,
+          "weight": 0.001963,
+          "bench": 0.051963,
           "first_cut": "2023-01-24T13:00:00+00:00",
           "lead_vs_open": "14.8 h before",
           "breaker": true
         },
         "ADANIPORTS.NS": {
-          "weight": 0.067612,
-          "bench": 0.0625,
+          "weight": 0.019435,
+          "bench": 0.019435,
           "first_cut": "2023-01-25T10:20:00+00:00",
           "lead_vs_open": "6.6 h after",
           "breaker": false
@@ -225,7 +225,20 @@
       "max_drawdown": -0.02453503057892592
     }
   },
-  "module_a_adani_performance": null,
+  "module_a_adani_performance": {
+    "Seismo": {
+      "return": -0.002271292226502797,
+      "max_drawdown": -0.0280640178048166
+    },
+    "Benchmark": {
+      "return": -0.04077876989600293,
+      "max_drawdown": -0.05669809600387221
+    },
+    "Naive tilt": {
+      "return": -0.03379188835259339,
+      "max_drawdown": -0.050834244966808106
+    }
+  },
   "module_b": {
     "svb_2023": [
       {
@@ -233,33 +246,33 @@
         "impact": 10,
         "epicenter": "SIVB",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.12389,
+        "cet1_ratio_after": 0.12376,
         "ecl_before": 75577008.09,
         "ecl_after": 294406681.1,
         "reverse_m_rbi": 3.26,
-        "pre_tax_loss": 207584791.83
+        "pre_tax_loss": 215953358.24
       },
       {
         "scenario": "svb_2023",
         "impact": 8,
         "epicenter": "SIVB",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.12915,
+        "cet1_ratio_after": 0.12908,
         "ecl_before": 75577008.09,
         "ecl_after": 82702963.34,
-        "reverse_m_rbi": 4.76,
-        "pre_tax_loss": -2059948.18
+        "reverse_m_rbi": 4.71,
+        "pre_tax_loss": 2980687.51
       },
       {
         "scenario": "svb_2023",
         "impact": 9,
         "epicenter": "BAC",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.13007,
+        "cet1_ratio_after": 0.12997,
         "ecl_before": 75577008.09,
         "ecl_after": 80934733.11,
         "reverse_m_rbi": 3.63,
-        "pre_tax_loss": 8739386.77
+        "pre_tax_loss": 15447211.95
       }
     ],
     "deepseek_2025": [
@@ -268,11 +281,11 @@
         "impact": 8,
         "epicenter": "NVDA",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.13123,
+        "cet1_ratio_after": 0.13122,
         "ecl_before": 75577008.09,
         "ecl_after": 75787348.09,
         "reverse_m_rbi": null,
-        "pre_tax_loss": -48102725.47
+        "pre_tax_loss": -47851791.55
       },
       {
         "scenario": "deepseek_2025",
@@ -283,7 +296,7 @@
         "ecl_before": 75577008.09,
         "ecl_after": 75787348.09,
         "reverse_m_rbi": null,
-        "pre_tax_loss": -67398645.13
+        "pre_tax_loss": -67063836.41
       }
     ],
     "tariff_2025": [
@@ -292,68 +305,68 @@
         "impact": 9,
         "epicenter": "AAPL",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.1096,
+        "cet1_ratio_after": 0.10967,
         "ecl_before": 75577008.09,
         "ecl_after": 220015773.22,
         "reverse_m_rbi": 1.89,
-        "pre_tax_loss": 362630831.77
+        "pre_tax_loss": 358467780.83
       },
       {
         "scenario": "tariff_2025",
         "impact": 9,
         "epicenter": null,
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.10975,
+        "cet1_ratio_after": 0.10981,
         "ecl_before": 75577008.09,
         "ecl_after": 219992827.98,
-        "reverse_m_rbi": 1.93,
-        "pre_tax_loss": 359529695.57
+        "reverse_m_rbi": 1.94,
+        "pre_tax_loss": 355366644.63
       },
       {
         "scenario": "tariff_2025",
         "impact": 8,
         "epicenter": null,
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.12187,
+        "cet1_ratio_after": 0.12192,
         "ecl_before": 75577008.09,
         "ecl_after": 146807963.49,
-        "reverse_m_rbi": 2.58,
-        "pre_tax_loss": 232323313.04
+        "reverse_m_rbi": 2.59,
+        "pre_tax_loss": 229197237.28
       }
     ],
     "adani_2023": [
       {
         "scenario": "adani_2023",
-        "impact": 8,
+        "impact": 10,
         "epicenter": "ADANIENT.NS",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.12751,
+        "cet1_ratio_after": 0.12668,
         "ecl_before": 75577008.09,
         "ecl_after": 82569867.21,
-        "reverse_m_rbi": null,
-        "pre_tax_loss": 34992966.58
+        "reverse_m_rbi": 6.6,
+        "pre_tax_loss": 89498780.23
       },
       {
         "scenario": "adani_2023",
         "impact": 9,
         "epicenter": "ADANIENT.NS",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.12751,
+        "cet1_ratio_after": 0.12685,
         "ecl_before": 75577008.09,
         "ecl_after": 82569867.21,
-        "reverse_m_rbi": null,
-        "pre_tax_loss": 34992966.58
+        "reverse_m_rbi": 7.69,
+        "pre_tax_loss": 78676440.87
       },
       {
         "scenario": "adani_2023",
-        "impact": 10,
+        "impact": 9,
         "epicenter": "ADANIENT.NS",
         "cet1_ratio_before": 0.13,
-        "cet1_ratio_after": 0.12751,
+        "cet1_ratio_after": 0.12685,
         "ecl_before": 75577008.09,
         "ecl_after": 82569867.21,
-        "reverse_m_rbi": 9.37,
-        "pre_tax_loss": 34992966.58
+        "reverse_m_rbi": 7.69,
+        "pre_tax_loss": 78676440.87
       }
     ],
     "red_team": [],

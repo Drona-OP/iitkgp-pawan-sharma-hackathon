@@ -28,6 +28,7 @@ class Entity:
     domains: tuple[str, ...] = ()
     index_member: bool = False
     index: str | None = None   # "US" or "IN" for index members, None otherwise
+    group: str = ""            # business group ("Adani"), for group-level risk rules
 
 
 # Macro entities let policy, commodity and market-wide news produce signals
@@ -83,6 +84,7 @@ class Universe:
                         domains=_split(row.get("domains")),
                         index_member=index_member,
                         index=index if index_member else None,
+                        group=(row.get("group") or "").strip(),
                     )
                 )
         return companies

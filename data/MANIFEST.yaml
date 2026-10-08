@@ -4,14 +4,32 @@ datasets:
   source: python -m seismo blotter (seed 2026); internal ratings synthetic
   licence: MIT
   synthetic: true
-  rows: 60
-  sha256: cf5d7d5ca4df7e0d784652ce81352e5096b8c885c7056d78ea764486cc89ae3d
+  rows: 76
+  sha256: 65828a44da17e9a4848c27eb44a51d180d43251181fdc8a68afa37908ea1f1a1
 - path: data/blotter/trade_blotter.csv
   source: python -m seismo blotter (seed 2026)
   licence: MIT
   synthetic: true
-  rows: 561
-  sha256: bc763a34be0ca2f50fa6c6b263b4a1c82201a698fb99dd14b30c82c74cc023fd
+  rows: 611
+  sha256: 077b19fc5717962f01b7e28a525a209d0d616a0eb9bda45d98e6eb6b5ac9f234
+- path: data/gdelt/adani_2023.csv
+  source: GDELT 2.0 event exports (scripts/fetch_data.py --only gdelt)
+  licence: 'GDELT: free, cite GDELT'
+  synthetic: false
+  rows: 166
+  sha256: c2142f855f7b6c6f1faaea8d9ee4cfb4d19d47b1f8ac58dce8c5d055196e1809
+- path: data/gdelt/control_2024.csv
+  source: GDELT 2.0 event exports (scripts/fetch_data.py --only gdelt)
+  licence: 'GDELT: free, cite GDELT'
+  synthetic: false
+  rows: 818
+  sha256: 286437b3c59d12de059e0328cba076b0987344e32b58948d03cfca85d66de214
+- path: data/gdelt/svb_2023.csv
+  source: GDELT 2.0 event exports (scripts/fetch_data.py --only gdelt)
+  licence: 'GDELT: free, cite GDELT'
+  synthetic: false
+  rows: 46
+  sha256: 503ac0986aed62108271749ff31e6207b36fb7deabb636d61011f35cda48ac4b
 - path: data/gold/headlines.jsonl
   source: Author-labelled illustrative headlines
   licence: MIT
@@ -22,11 +40,11 @@ datasets:
   source: Computed by `make shocks` from prices and FRED
   licence: MIT
   synthetic: false
-  rows: 189
-  sha256: 80dfdec7dcad64718194f5727b47a5af1bfbed311ca1ba9464559580f9e14068
+  rows: 361
+  sha256: a8837db772739a2828648e7cfa05597b8be20e44f16e94aa92b91254c2ea73ae
 - path: data/market/caps.csv
-  source: Yahoo Finance via yfinance (scripts/fetch_data.py)
-  licence: Yahoo terms; research use
+  source: SEC shares outstanding x last Yahoo close (scripts/fetch_data.py)
+  licence: Public / Yahoo terms; research use
   synthetic: false
   rows: 20
   sha256: a9734c7e18aea470dc937af5c27babdc85e69d547014526f5807727bee830008
@@ -40,8 +58,8 @@ datasets:
   source: FRED, Federal Reserve Bank of St. Louis (scripts/fetch_data.py)
   licence: Public; cite FRED
   synthetic: false
-  rows: 5168
-  sha256: 055d4ef7a63f692477342d6c934077dd275166c5379a3c0682a586aa950dd884
+  rows: 5219
+  sha256: 1ce4db14cc01827d774c46474b7179f48252cd8710f568f455567a9354200ece
 - path: data/market/impact_events.csv
   source: Computed by `make impact` (8-K event study)
   licence: MIT
@@ -52,14 +70,38 @@ datasets:
   source: Yahoo Finance via yfinance (scripts/fetch_data.py)
   licence: Yahoo terms; research use
   synthetic: false
-  rows: 5155
-  sha256: 300d5b3254c0b895947b82c0eb9df41022e0eb627521b5eac7b2f52c58578391
+  rows: 5160
+  sha256: ef5b3e76d0c548197cc78376771dd3251c14151600f03e12d0e22829cfa8dc3c
 - path: data/market/prices_open.csv
   source: Yahoo Finance via yfinance (scripts/fetch_data.py)
   licence: Yahoo terms; research use
   synthetic: false
-  rows: 2024
-  sha256: fb9d58794cfbe81d4adc054b3357e9dd6c7b387d1f751f105fed43b76282d446
+  rows: 2029
+  sha256: 62c25ddd1b428819f555613b5eaf52992b84fcd45cadaf3139246960b8765477
+- path: data/market/shares_in.csv
+  source: 'Yahoo Finance via yfinance: NSE shares outstanding (scripts/fetch_data.py)'
+  licence: Yahoo terms; research use
+  synthetic: false
+  rows: 16
+  sha256: 7e4b69cf6307bb874ca2967d4a2ea2b4e4f43e7d8f536a7e3ca2852692f2a360
+- path: data/replay/adani_2023.jsonl
+  source: 'Author: paraphrased reconstruction of public reporting'
+  licence: MIT
+  synthetic: true
+  rows: 28
+  sha256: e7a005622b6f76d341268cb98e5606ca2ea5a2178000ce0235a036901efdeec7
+- path: data/replay/adani_2023_gdelt.jsonl
+  source: 'GDELT 2.0 event exports: real URLs, publishers, timestamps; headline from URL slug'
+  licence: 'GDELT: free, cite GDELT'
+  synthetic: false
+  rows: 163
+  sha256: 963886dd9927b0f2911f5a7cf37fae4cf54ff6cc71250abb0319a9c55cfb946c
+- path: data/replay/control_2024_gdelt.jsonl
+  source: 'GDELT 2.0 event exports: real URLs, publishers, timestamps; headline from URL slug'
+  licence: 'GDELT: free, cite GDELT'
+  synthetic: false
+  rows: 816
+  sha256: 67f1dcd0f2a64ffc137ccc1f4659da0b2bd96042cc8885fb683c5d5eef6bd75b
 - path: data/replay/deepseek_2025.jsonl
   source: 'Author: paraphrased reconstruction of public reporting'
   licence: MIT
@@ -90,18 +132,36 @@ datasets:
   synthetic: true
   rows: 27
   sha256: 869a4bd054b058c657b3bd37b00fc2d560660c75196df94b9350801d2501c55c
+- path: data/replay/svb_2023_gdelt.jsonl
+  source: 'GDELT 2.0 event exports: real URLs, publishers, timestamps; headline from URL slug'
+  licence: 'GDELT: free, cite GDELT'
+  synthetic: false
+  rows: 45
+  sha256: fab3e8c4b7e87a8a11e0b92f45ada1cd663b19f3030c29c1953fe7836ced88b9
 - path: data/replay/tariff_2025.jsonl
   source: 'Author: paraphrased reconstruction of public reporting'
   licence: MIT
   synthetic: true
   rows: 18
   sha256: 6b89ecd85e2c7542fbe360c9c121fe6f931b014072f1bba51a31c8fe068fec79
+- path: data/sentfin/SEntFiN-v1.1.csv
+  source: 'SEntFiN 1.0 (Sinha et al., 2023, JASIST), Kaggle: ankurzing/aspect-based-sentiment-analysis-for-financial-news'
+  licence: As published on Kaggle; research use with citation
+  synthetic: false
+  rows: 10753
+  sha256: 05fed840b30b5a68eeac50471a9c621547048b10a214f5d6e4fe8dd21d63ecc5
 - path: data/universe.csv
   source: SEC company_tickers.json (CIKs); aliases and domains by the author
   licence: Public / MIT
   synthetic: false
   rows: 20
   sha256: b1d7af5bc7b1d03eeadfbe24b5bb2a77c6a2f1f820f5a83dd2c18e9ffab54a5c
+- path: data/universe_in.csv
+  source: 16 Nifty 50 names; NSE symbols; aliases and domains by the author
+  licence: Public / MIT
+  synthetic: false
+  rows: 16
+  sha256: 7600c8b08457b9ad3af8e1d019f1e59d89e6137a20042ac62b8e3260c9864eeb
 - path: data/watchlist.csv
   source: Author; Harbor National Bank is fictional
   licence: MIT

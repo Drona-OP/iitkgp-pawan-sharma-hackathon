@@ -196,3 +196,13 @@ def test_india_caps_use_shares_times_the_close_before_the_replay(tmp_path):
     caps = mk.caps_from_shares(tmp_path, ["ADANIENT.NS"], pd.Timestamp("2023-01-25T03:00", tz="UTC"))
     assert caps == {"ADANIENT.NS": 3442.0 * 1000}
     mk._prices.cache_clear()
+
+
+def test_breaker_freezes_the_rest_of_the_group_at_benchmark():
+    holdings = {"A": Holding("A", "Industrials", 0.10, 0.3, "G"), "B": Holding("B", "Industrials", 0.05, 0.3, "G"),
+                **{f"X{i}": Holding(f"X{i}", f"S{i}", 0.85 / 8, 0.2) for i in range(8)}}
+    vals = {"B": 0.8}  # good news on the sister company would normally lift it
+    state = target_weights(holdings, vals, {"B": 3}, {"A"}, TiltConfig())
+    assert state.weights["A"] == pytest.approx(0.05)
+    assert state.weights["B"] <= 0.05 + 1e-9
+    assert sum(state.weights.values()) == pytest.approx(1.0)

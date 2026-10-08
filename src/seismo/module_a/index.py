@@ -11,8 +11,9 @@ Borrowed from the S&P 500 RavenPack AI Sentiment Index methodology and active ma
   volatility so a quiet utility moves more than a volatile chipmaker for the same news:
       w_i ~ w_b,i x exp(kappa x z~_i x sigma_bar / sigma_i)
   then a 15% name cap and a 5% active-weight cap per name and per sector;
-- risk circuit breaker: a corroborated Credit or Operational event with impact >= 8 (gate
-  TRIGGER) sends the name to its maximum underweight at once; a retraction unwinds it;
+- risk circuit breaker: a corroborated Credit or Operational event (or a fraud allegation) with
+  impact >= 8 (gate TRIGGER) sends the name to its maximum underweight at once, and the other
+  names of its business group may not rise above benchmark; a retraction unwinds it;
 - no-trade band: rebalance only when total proposed change exceeds 2% or a breaker fires.
 """
 
@@ -48,6 +49,7 @@ class Holding:
     sector: str
     bench: float
     vol: float
+    group: str = ""
 
 
 @dataclass
@@ -88,7 +90,8 @@ def zscores(values: dict[str, float], counts: dict[str, int], k: float) -> dict[
     return {t: ((values[t] - mean) / sd) * counts.get(t, 0) / (counts.get(t, 0) + k) for t in tickers}
 
 
-def _project(w: dict[str, float], holdings: dict[str, Holding], cfg: TiltConfig, floors: dict[str, float]) -> dict[str, float]:
+def _project(w: dict[str, float], holdings: dict[str, Holding], cfg: TiltConfig, floors: dict[str, float],
+             ceilings: set[str] | None = None) -> dict[str, float]:
     """Enforce name, active and sector caps, then restore full investment (alternating passes).
 
     Sector caps scale the sector's active weights towards the benchmark, so a name keeps the
@@ -97,6 +100,9 @@ def _project(w: dict[str, float], holdings: dict[str, Holding], cfg: TiltConfig,
     bench = {t: h.bench for t, h in holdings.items()}
     lo = {t: max(0.0, bench[t] - cfg.active_cap) for t in w}
     hi = {t: min(cfg.name_cap, bench[t] + cfg.active_cap) for t in w}
+    for t in ceilings or ():
+        hi[t] = min(hi[t], bench[t])
+        lo[t] = min(lo[t], hi[t])
     for t, f in floors.items():
         lo[t] = hi[t] = f
     sectors: dict[str, list[str]] = {}
@@ -135,7 +141,9 @@ def target_weights(
     total = sum(raw.values())
     raw = {t: v / total for t, v in raw.items()}
     floors = {t: max(0.0, holdings[t].bench - cfg.active_cap) for t in breaker if t in holdings}
-    w = _project(dict(raw), holdings, cfg, floors)
+    groups = {holdings[t].group for t in breaker if t in holdings and holdings[t].group}
+    ceilings = {t for t, h in holdings.items() if h.group in groups and t not in floors}
+    w = _project(dict(raw), holdings, cfg, floors, ceilings)
     alpha = {t: cfg.ic * holdings[t].vol * z[t] for t in holdings}
     return TiltState(weights=w, z=z, raw=raw, alpha=alpha, breaker=set(breaker))
 

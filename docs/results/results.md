@@ -1,4 +1,4 @@
-# Seismo results (generated 2026-10-08 23:11 UTC)
+# Seismo results (generated 2026-10-08 23:12 UTC)
 
 Sentiment backend `sentfin-target-lr-v1`, impact model `event-study-8k-v1`. Regenerate with `make results`.
 
@@ -34,6 +34,8 @@ Sentiment backend `sentfin-target-lr-v1`, impact model `event-study-8k-v1`. Rege
 
 Headlines are rebuilt from URL slugs; timestamps are GDELT's 15-minute ingestion slots, which can trail publication by 15-30 minutes. First triggers: svb_2023 at 2023-03-10T16:00:00+00:00 on "SVB CEO Becker Asks Silicon Valley Bank Clients to Stay Calm"; adani_2023 at 2023-01-25T09:15:00+00:00 on "Adani Stocks Drop after Hindenberg Accuses Firm of Manipulation and Fraud".
 
+Out-of-sample note: these windows were first run with event rules-v0, which missed the SVB window (0 auto-triggers: real headlines such as "Silicon Valley Bank Startups Panic" and "California Regulator Shuts Silicon Valley Bank" fell into class OTHER). The error analysis added bank-crisis vocabulary (rules-v1, seismo/nlp/events.py). The Adani and control results are identical under v0 and v1, so the SVB row is no longer out-of-sample; the other two are.
+
 ## Target sentiment on real labelled headlines (SEntFiN 1.0, held-out test)
 
 | System | Accuracy | Macro-F1 | Macro-F1, multi-entity headlines | Macro-F1, conflicting headlines |
@@ -59,7 +61,7 @@ SEntFiN 1.0 (Sinha et al., 2023): Economic Times headlines with entity-level lab
 
 | documents | engine_p50_ms | engine_p95_ms | docs_per_second | llm_calls |
 | --- | --- | --- | --- | --- |
-| 152 | 1.31 | 2.86 | 661.2 | 0 |
+| 152 | 1.37 | 2.85 | 674.4 | 0 |
 
 ## Module A (DeepSeek replay)
 
@@ -75,16 +77,22 @@ NVDA first cut at 2025-01-26T16:22:00+00:00 (22.1 h before the Monday open); wei
 
 | Name | Benchmark | Weight before the 25 Jan open | First cut | Circuit breaker |
 | --- | --- | --- | --- | --- |
-| ADANIENT | 6.25% | 1.25% | 2023-01-24T13:00:00+00:00 (14.8 h before the open) | yes |
-| ADANIPORTS | 6.25% | 6.76% | 2023-01-25T10:20:00+00:00 (6.6 h after the open) | no |
+| ADANIENT | 5.20% | 0.20% | 2023-01-24T13:00:00+00:00 (14.8 h before the open) | yes |
+| ADANIPORTS | 1.94% | 1.94% | 2023-01-25T10:20:00+00:00 (6.6 h after the open) | no |
 
-Turnover 27.0% vs naive tilt 181.2%.
+Turnover 24.6% vs naive tilt 134.5%.
+
+| Portfolio | Return | Max drawdown |
+| --- | --- | --- |
+| Seismo | -0.23% | -2.81% |
+| Benchmark | -4.08% | -5.67% |
+| Naive tilt | -3.38% | -5.08% |
 
 ## Module B (most severe auto-triggered stress run per pack)
 
 | Pack | Analog | Impact | Obligor | CET1 before | CET1 after | ECL | Breaches 8% at |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| svb_2023 | svb_2023 | 10 | SIVB | 13.00% | 12.39% | $76mn -> $294mn | 3.26x |
+| svb_2023 | svb_2023 | 10 | SIVB | 13.00% | 12.38% | $76mn -> $294mn | 3.26x |
 | deepseek_2025 | deepseek_2025 | 8 | NVDA | 13.00% | 13.12% | $76mn -> $76mn | > 10x |
-| tariff_2025 | tariff_2025 | 9 | AAPL | 13.00% | 10.96% | $76mn -> $220mn | 1.89x |
-| adani_2023 | adani_2023 | 8 | ADANIENT.NS | 13.00% | 12.75% | $76mn -> $83mn | > 10x |
+| tariff_2025 | tariff_2025 | 9 | AAPL | 13.00% | 10.97% | $76mn -> $220mn | 1.89x |
+| adani_2023 | adani_2023 | 10 | ADANIENT.NS | 13.00% | 12.67% | $76mn -> $83mn | 6.60x |
