@@ -3,7 +3,7 @@
 **Candidate Name:** Pawan Sharma
 **College Email ID:** pawan.iitkgpmaveric@kgpian.iitkgp.ac.in
 **College / Campus:** Indian Institute of Technology Kharagpur
-**Demo Video Link:** [YouTube, unlisted - added before submission]
+**Demo Video Link:** https://youtu.be/EpWWGWEIMmA
 **Slide Deck Link (if hosted externally):** not hosted externally; see [`docs/presentation.pdf`](docs/presentation.pdf)
 **Live dashboard (no install):** https://iitkgp-pawan-sharma-hackathon-cbprsqney5pesw6pfijjrc.streamlit.app/ (Streamlit Community Cloud; the first visit can take a minute to wake the app)
 
